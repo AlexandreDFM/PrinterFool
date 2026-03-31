@@ -1,0 +1,32 @@
+EPITECH
+2 Rue du Professeur Charles Appleton, 69007 Lyon
+69007 Lyon
+Pays : France
+
+Commande n° : {commande_number}
+Ticket n° : {ticket_number} Caisse : {caisse_number}
+Date : {date} - {hour} - {at place or takeout}
+Vendeur : {api_user}
+----------------------------------------
+QTE DESIGNATION PRIX UNITAIRE TOTAL TVA
+{
+    quantity : {
+        "designation": "Item 1",
+        "unit_price": 10.00,
+        "total_price": 20.00,
+        "tva": 10.00
+    },
+    quantity : {
+        "designation": "Item 2",
+        "unit_price": 15.00,
+        "total_price": 30.00,
+        "tva": 10.00
+    }
+}
+----------------------------------------
+Total HT : {total_ht}
+TVA : {tva}
+Total TTC : {total_ttc}
+Merci pour votre achat !
+
+QR Code : {qr_code_link_to_generate}

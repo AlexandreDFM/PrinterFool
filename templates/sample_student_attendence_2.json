@@ -1,0 +1,65 @@
+{
+  "merchant": {
+    "name": "EPITECH",
+    "address": "2 Rue du Professeur Charles Appleton",
+    "postal_code": "69007",
+    "city": "Lyon",
+    "country": "France"
+  },
+  "order": {
+    "commande_number": "CMD-2026-001842",
+    "ticket_number": "001842",
+    "caisse_number": "04"
+  },
+  "transaction": {
+    "date": "2026-03-30",
+    "hour": "14:32",
+    "type": "Sur place"
+  },
+  "staff": {
+    "seller": "Marie Durand"
+  },
+  "items": [
+    {
+      "quantity": 2,
+      "designation": "Sandwich Club",
+      "unit_price": 9.50,
+      "total_price": 19.00,
+      "tva": 3.04
+    },
+    {
+      "quantity": 1,
+      "designation": "Boisson Froide (33cl)",
+      "unit_price": 2.50,
+      "total_price": 2.50,
+      "tva": 0.40
+    },
+    {
+      "quantity": 1,
+      "designation": "Dessert - Brownie",
+      "unit_price": 3.50,
+      "total_price": 3.50,
+      "tva": 0.56
+    },
+    {
+      "quantity": 2,
+      "designation": "Cookie Chocolat",
+      "unit_price": 1.80,
+      "total_price": 3.60,
+      "tva": 0.58
+    }
+  ],
+  "totals": {
+    "total_ht": 28.60,
+    "tva_amount": 4.58,
+    "total_ttc": 33.18
+  },
+  "qr_code": {
+    "value": "CMD-2026-001842-EPITECH",
+    "url": "https://receipt.epitech.eu/verify?ref=CMD-2026-001842"
+  },
+  "footer": {
+    "message": "Merci pour votre achat !",
+    "contact": "support@epitech.eu"
+  }
+}

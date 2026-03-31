@@ -1,0 +1,58 @@
+[
+  {
+    "merchant": {
+      "name": "EPITECH",
+      "address": "2 Rue du Professeur Charles Appleton"
+    },
+    "order": {
+      "commande_number": "CMD-2026-001842",
+      "ticket_number": "001842",
+      "caisse_number": "04"
+    },
+    "transaction": {
+      "date": "2026-03-30",
+      "hour": "14:32",
+      "type": "Sur place"
+    },
+    "staff": {
+      "seller": "Marie Durand"
+    },
+    "items": [
+      {
+        "quantity": 2,
+        "designation": "Sandwich Club",
+        "unit_price": 9.5,
+        "total_price": 19.0
+      },
+      {
+        "quantity": 1,
+        "designation": "Boisson Froide (33cl)",
+        "unit_price": 2.5,
+        "total_price": 2.5
+      },
+      {
+        "quantity": 1,
+        "designation": "Dessert - Brownie",
+        "unit_price": 3.5,
+        "total_price": 3.5
+      },
+      {
+        "quantity": 2,
+        "designation": "Cookie Chocolat",
+        "unit_price": 1.8,
+        "total_price": 3.6
+      }
+    ],
+    "totals": {
+      "total_ht": 28.6,
+      "tva_amount": 4.58,
+      "total_ttc": 33.18
+    },
+    "qr_code": {
+      "value": "https://www.youtube.com/watch?v=dQw4w9WgXcQ/?student=charles1.affouard@epitech.eu"
+    },
+    "footer": {
+      "message": "Merci pour votre achat!"
+    }
+  }
+]

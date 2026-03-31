@@ -1,0 +1,58 @@
+{
+  "merchant": {
+    "name": "Coffee Shop Express",
+    "address": "42 Rue de la Paix",
+    "postal_code": "75002",
+    "city": "Paris",
+    "country": "France"
+  },
+  "order": {
+    "commande_number": "CMD-2026-002156",
+    "ticket_number": "002156",
+    "caisse_number": "02"
+  },
+  "transaction": {
+    "date": "2026-03-30",
+    "hour": "14:32",
+    "type": "À emporter"
+  },
+  "staff": {
+    "seller": "Thomas Lefevre"
+  },
+  "items": [
+    {
+      "quantity": 1,
+      "designation": "Cappuccino Moyen",
+      "unit_price": 4.50,
+      "total_price": 4.50,
+      "tva": 0.72
+    },
+    {
+      "quantity": 2,
+      "designation": "Croissant Jambon Fromage",
+      "unit_price": 5.50,
+      "total_price": 11.00,
+      "tva": 1.76
+    },
+    {
+      "quantity": 1,
+      "designation": "Pain au Chocolat",
+      "unit_price": 3.00,
+      "total_price": 3.00,
+      "tva": 0.48
+    }
+  ],
+  "totals": {
+    "total_ht": 18.50,
+    "tva_amount": 2.96,
+    "total_ttc": 21.46
+  },
+  "qr_code": {
+    "value": "CMD-2026-002156-CAFE",
+    "url": "https://receipt.cafe-express.fr/verify?ref=CMD-2026-002156"
+  },
+  "footer": {
+    "message": "À bientôt !",
+    "contact": "contact@cafe-express.fr"
+  }
+}
