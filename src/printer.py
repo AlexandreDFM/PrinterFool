@@ -12,9 +12,8 @@ import usb.core
 import usb.util
 from typing import Optional, List, Tuple
 import logging
+import time
 
-# Configuration du logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -30,30 +29,32 @@ class ZJ8360Printer:
     PRODUCT_ID = 0x5011
 
     # Paramètres de communication
-    WRITE_ENDPOINT = 0x01
-    READ_ENDPOINT = 0x82
     TIMEOUT = 5000  # millisecondes
 
-    # Largeurs de papier en caractères
-    PAPER_WIDTH = 32  # 80mm = 32 caractères
-
     # Commandes ESC/POS
-    ESC = b'\x1b'
-    GS = b'\x1d'
+    ESC = b"\x1b"
+    GS = b"\x1d"
 
     # Paramètres d'initialisation
-    INIT = b'\x1b\x40'  # ESC @ - Initialiser
+    INIT = b"\x1b\x40"  # ESC @ - Initialiser
 
-    def __init__(self, vendor_id: int = VENDOR_ID, product_id: int = PRODUCT_ID):
+    def __init__(
+        self,
+        vendor_id: int = VENDOR_ID,
+        product_id: int = PRODUCT_ID,
+        paper_width: int = 48,
+    ):
         """
         Initialiser la connexion avec l'imprimante.
 
         Args:
             vendor_id: ID du vendeur USB
             product_id: ID du produit USB
+            paper_width: Largeur du papier en caractères (32 pour 80mm, 40 pour défaut, 48 pour 96mm)
         """
         self.vendor_id = vendor_id
         self.product_id = product_id
+        self.paper_width = paper_width  # Support 32, 40, or 48 character widths
         self.device = None
         self.endpoint_out = None
         self.endpoint_in = None
@@ -68,12 +69,13 @@ class ZJ8360Printer:
         try:
             # Chercher l'imprimante
             self.device = usb.core.find(
-                idVendor=self.vendor_id,
-                idProduct=self.product_id
+                idVendor=self.vendor_id, idProduct=self.product_id
             )
 
             if self.device is None:
-                logger.error(f"Imprimante non trouvée (Vendor: {hex(self.vendor_id)}, Product: {hex(self.product_id)})")
+                logger.error(
+                    f"Imprimante non trouvée (Vendor: {hex(self.vendor_id)}, Product: {hex(self.product_id)})"
+                )
                 return False
 
             logger.info("Imprimante détectée")
@@ -96,12 +98,14 @@ class ZJ8360Printer:
 
             self.endpoint_out = usb.util.find_descriptor(
                 intf,
-                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
+                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress)
+                == usb.util.ENDPOINT_OUT,
             )
 
             self.endpoint_in = usb.util.find_descriptor(
                 intf,
-                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
+                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress)
+                == usb.util.ENDPOINT_IN,
             )
 
             if self.endpoint_out is None:
@@ -126,10 +130,15 @@ class ZJ8360Printer:
         """Fermer la connexion avec l'imprimante."""
         if self.device:
             try:
-                usb.core.dispose_resources(self.device)
+                # Small delay to ensure all pending commands are processed
+                time.sleep(0.2)
+                # Release the USB interface
+                usb.util.release_interface(self.device, 0)
+            except Exception:
+                pass  # Interface may not have been claimed
+            finally:
+                self.device = None
                 logger.info("Déconnecté de l'imprimante")
-            except Exception as e:
-                logger.error(f"Erreur lors de la déconnexion: {e}")
 
     def _send_command(self, data: bytes) -> bool:
         """
@@ -156,7 +165,7 @@ class ZJ8360Printer:
         """Initialiser l'imprimante."""
         self._send_command(self.INIT)
 
-    def print_text(self, text: str, encoding: str = 'utf-8') -> bool:
+    def print_text(self, text: str, encoding: str = "utf-8") -> bool:
         """
         Imprimer du texte simple.
 
@@ -168,13 +177,13 @@ class ZJ8360Printer:
             True si succès, False sinon
         """
         try:
-            data = text.encode(encoding) + b'\n'
+            data = text.encode(encoding) + b"\n"
             return self._send_command(data)
         except Exception as e:
             logger.error(f"Erreur lors de l'impression: {e}")
             return False
 
-    def print_line(self, char: str = '-', width: int = None) -> bool:
+    def print_line(self, char: str = "-", width: int = None) -> bool:
         """
         Imprimer une ligne de séparation.
 
@@ -186,7 +195,7 @@ class ZJ8360Printer:
             True si succès, False sinon
         """
         if width is None:
-            width = self.PAPER_WIDTH
+            width = self.paper_width
         return self.print_text(char * width)
 
     def print_centered(self, text: str) -> bool:
@@ -199,8 +208,8 @@ class ZJ8360Printer:
         Returns:
             True si succès, False sinon
         """
-        padding = (self.PAPER_WIDTH - len(text)) // 2
-        centered_text = ' ' * padding + text
+        padding = (self.paper_width - len(text)) // 2
+        centered_text = " " * padding + text
         return self.print_text(centered_text)
 
     def set_bold(self, enable: bool = True) -> bool:
@@ -214,9 +223,9 @@ class ZJ8360Printer:
             True si succès, False sinon
         """
         if enable:
-            command = self.ESC + b'\x45\x01'  # ESC E 1
+            command = self.ESC + b"\x45\x01"  # ESC E 1
         else:
-            command = self.ESC + b'\x45\x00'  # ESC E 0
+            command = self.ESC + b"\x45\x00"  # ESC E 0
         return self._send_command(command)
 
     def set_font_size(self, height: int = 1, width: int = 1) -> bool:
@@ -235,10 +244,10 @@ class ZJ8360Printer:
             return False
 
         size = ((height - 1) << 4) | (width - 1)
-        command = self.GS + b'\x21' + bytes([size])
+        command = self.GS + b"\x21" + bytes([size])
         return self._send_command(command)
 
-    def set_alignment(self, alignment: str = 'left') -> bool:
+    def set_alignment(self, alignment: str = "left") -> bool:
         """
         Définir l'alignement du texte.
 
@@ -249,9 +258,9 @@ class ZJ8360Printer:
             True si succès, False sinon
         """
         alignment_map = {
-            'left': b'\x1b\x61\x00',      # ESC a 0
-            'center': b'\x1b\x61\x01',    # ESC a 1
-            'right': b'\x1b\x61\x02',     # ESC a 2
+            "left": b"\x1b\x61\x00",  # ESC a 0
+            "center": b"\x1b\x61\x01",  # ESC a 1
+            "right": b"\x1b\x61\x02",  # ESC a 2
         }
 
         if alignment not in alignment_map:
@@ -271,7 +280,7 @@ class ZJ8360Printer:
             True si succès, False sinon
         """
         for _ in range(lines):
-            if not self._send_command(b'\n'):
+            if not self._send_command(b"\n"):
                 return False
         return True
 
@@ -282,12 +291,12 @@ class ZJ8360Printer:
         Returns:
             True si succès, False sinon
         """
-        command = self.GS + b'\x56\x00'  # GS V 0
+        command = self.GS + b"\x56\x00"  # GS V 0
         return self._send_command(command)
 
-    def print_receipt(self, items: List[Tuple[str, str]],
-                     title: str = "REÇU",
-                     total: str = None) -> bool:
+    def print_receipt(
+        self, items: List[Tuple[str, str]], title: str = "REÇU", total: str = None
+    ) -> bool:
         """
         Imprimer un reçu formaté.
 
@@ -301,12 +310,12 @@ class ZJ8360Printer:
         """
         try:
             # En-tête
-            self.set_alignment('center')
+            self.set_alignment("center")
             self.print_text("")
             self.set_font_size(2, 2)
             self.print_centered(title)
             self.set_font_size(1, 1)
-            self.set_alignment('left')
+            self.set_alignment("left")
 
             # Séparation
             self.print_line()
@@ -317,7 +326,7 @@ class ZJ8360Printer:
                 name_part = name[:20]  # Limiter le nom
                 price_part = price.rjust(10)
                 line = f"{name_part:<20}{price_part}"
-                self.print_text(line[:self.PAPER_WIDTH])
+                self.print_text(line[: self.paper_width])
 
             # Séparation
             self.print_line()
@@ -326,14 +335,14 @@ class ZJ8360Printer:
             if total:
                 total_line = f"{'TOTAL':<20}{total.rjust(10)}"
                 self.set_bold(True)
-                self.print_text(total_line[:self.PAPER_WIDTH])
+                self.print_text(total_line[: self.paper_width])
                 self.set_bold(False)
 
             # Pied de page
-            self.set_alignment('center')
+            self.set_alignment("center")
             self.print_text("")
             self.print_centered("Merci!")
-            self.set_alignment('left')
+            self.set_alignment("left")
 
             # Avancer et couper
             self.feed_paper(3)
@@ -344,7 +353,6 @@ class ZJ8360Printer:
         except Exception as e:
             logger.error(f"Erreur lors de l'impression du reçu: {e}")
             return False
-
 
 def list_usb_devices():
     """
@@ -362,14 +370,11 @@ def list_usb_devices():
 
     for device in devices:
         try:
-            print(f"Vendor: {hex(device.idVendor):>6} | Product: {hex(device.idProduct):>6} | "
-                  f"Manufacturer: {usb.util.get_string(device, device.iManufacturer) or 'N/A':>20}")
+            print(
+                f"Vendor: {hex(device.idVendor):>6} | Product: {hex(device.idProduct):>6} | "
+                f"Manufacturer: {usb.util.get_string(device, device.iManufacturer) or 'N/A':>20}"
+            )
         except Exception as e:
             print(f"Erreur lors de la lecture de l'appareil: {e}")
 
     print("-" * 50)
-
-
-if __name__ == "__main__":
-    # Example: Liste les appareils USB
-    list_usb_devices()
