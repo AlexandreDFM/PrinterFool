@@ -9,7 +9,7 @@
       "_type": "workspace",
       "parentId": null,
       "name": "HZTZPrinter API",
-      "description": "Complete collection for the HZTZPrinter Flask API server.\n\nStart the server before running:\n  python fool_printer.py serve\n\nDefault base URL: http://localhost:8360/api/\n\nEndpoints:\n  GET  /api/health\n  GET  /api/templates\n  POST /api/preview\n  POST /api/print\n  POST /api/qr\n  GET  /api/usb\n  GET  /api/test",
+      "description": "Complete collection for the HZTZPrinter Flask API server.\n\nStart the server before running:\n  python fool_printer.py serve\n\nDefault base URL: http://localhost:8360/api/\n\nEndpoints:\n  GET  /api/health\n  GET  /api/templates\n  POST /api/preview\n  POST /api/print\n  POST /api/attendance\n  POST /api/qr\n  GET  /api/usb\n  GET  /api/test",
       "scope": "collection"
     },
     {
@@ -88,6 +88,16 @@
       "metaSortKey": 3
     },
     {
+      "_id": "fld_attendance",
+      "_type": "request_group",
+      "parentId": "wrk_hztz",
+      "name": "Attendance",
+      "description": "Generate personalised student attendance tickets (April Fools edition). POST /api/attendance with a student email to get a funny receipt ticket with randomised items, QR rickroll, and custom overrides via the extend parameter.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 4
+    },
+    {
       "_id": "fld_qr",
       "_type": "request_group",
       "parentId": "wrk_hztz",
@@ -95,7 +105,7 @@
       "description": "Generate QR codes as ASCII art (ascii/printer formats) or PNG images.",
       "environment": {},
       "environmentPropertyOrder": null,
-      "metaSortKey": 4
+      "metaSortKey": 5
     },
     {
       "_id": "fld_errors",
@@ -105,7 +115,7 @@
       "description": "Negative tests — verify that the API returns proper error responses for invalid inputs.",
       "environment": {},
       "environmentPropertyOrder": null,
-      "metaSortKey": 5
+      "metaSortKey": 6
     },
     {
       "_id": "req_health",
@@ -372,6 +382,126 @@
       "settingFollowRedirects": "global"
     },
     {
+      "_id": "req_attendance_basic",
+      "_type": "request",
+      "parentId": "fld_attendance",
+      "name": "Attendance — Basic",
+      "description": "Generate a personalised student attendance ticket with only the email.\nName, items, QR code, and funny elements are all auto-generated.\n\nExpected: ok=true, template=\"attendance\", student.name=\"Jean Dupont\", preview contains EPITECH",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/attendance",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"student_email\": \"jean.dupont@epitech.eu\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_att_basic_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_attendance_extend",
+      "_type": "request",
+      "parentId": "fld_attendance",
+      "name": "Attendance — With Extend",
+      "description": "Test the extend parameter: deep-merge custom overrides on top of auto-generated ticket data.\nVerifies dict fields are merged (address preserved) and lists/scalars are replaced.\n\nExpected: merchant.name overridden, merchant.address preserved, items replaced, fun.motto overridden but fun.warning kept",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/attendance",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"student_email\": \"charles1.affouard@epitech.eu\",\n  \"extend\": {\n    \"merchant\": { \"name\": \"EPITECH LYON - CAMPUS MOUTON\" },\n    \"staff\": { \"seller\": \"Le Pion Officiel du 1er Avril\" },\n    \"items\": [\n      { \"quantity\": 1, \"designation\": \"Retard injustifie (flagrant)\", \"unit_price\": 42.00, \"total_price\": 42.00 },\n      { \"quantity\": 3, \"designation\": \"Soupir de professeur\", \"unit_price\": 0.50, \"total_price\": 1.50 }\n    ],\n    \"totals\": { \"total_ht\": 43.50, \"tva_amount\": 8.70, \"total_ttc\": 52.20 },\n    \"fun\": { \"motto\": \"Tu croyais echapper au scan ?\" },\n    \"qr_code\": { \"value\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ?student=charles1.affouard@epitech.eu&custom=true\" },\n    \"footer\": { \"message\": \"Poisson d'avril ! Mais le ticket est vrai.\" }\n  }\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_att_extend_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_attendance_deterministic",
+      "_type": "request",
+      "parentId": "fld_attendance",
+      "name": "Attendance — Deterministic",
+      "description": "Verify deterministic behaviour: same email always produces the same ticket number, 3-6 funny items, consistent totals.\n\nRun this request twice — the ticket_number should be identical both times.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/attendance",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"student_email\": \"test.deterministic@epitech.eu\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_att_determ_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_attendance_custom_name",
+      "_type": "request",
+      "parentId": "fld_attendance",
+      "name": "Attendance — Custom Name & Seller",
+      "description": "Test student_name and scanned_by overrides.\nThe student name should NOT be derived from the email, and scanned_by should appear as the seller.\n\nExpected: student.name=\"Marie Curie (La Vraie)\", staff.seller=\"Albert Einstein\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/attendance",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"student_email\": \"marie.curie@epitech.eu\",\n  \"student_name\": \"Marie Curie (La Vraie)\",\n  \"scanned_by\": \"Albert Einstein\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_att_custom_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 4,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
       "_id": "req_qr_ascii",
       "_type": "request",
       "parentId": "fld_qr",
@@ -624,6 +754,36 @@
       "parameters": [],
       "authentication": {},
       "metaSortKey": 6,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_att_err_no_email",
+      "_type": "request",
+      "parentId": "fld_errors",
+      "name": "Attendance — Error Missing Email",
+      "description": "POST /api/attendance without the required student_email field.\n\nExpected: 400, ok=false, error mentions \"student_email\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/attendance",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"student_name\": \"Orphan Student\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_att_err_email_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 7,
       "isPrivate": false,
       "settingStoreCookies": true,
       "settingSendCookies": true,

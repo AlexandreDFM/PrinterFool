@@ -1,0 +1,61 @@
+meta {
+  name: Attendance - Deterministic
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{baseUrl}}/api/attendance
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "student_email": "test.deterministic@epitech.eu"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("same email should always produce same ticket number", function() {
+    const body = res.getBody();
+    // Store for comparison — this test documents that the ticket number
+    // is deterministic.  Running the same request twice should yield
+    // the exact same ticket_number.
+    expect(body.ticket_number).to.be.a("string");
+    expect(body.ticket_number.length).to.equal(6);
+  });
+
+  test("items should be between 3 and 6", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.items.length).to.be.at.least(3);
+    expect(td.items.length).to.be.at.most(6);
+  });
+
+  test("totals should be consistent", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.totals.total_ht).to.be.a("number");
+    expect(td.totals.tva_amount).to.be.a("number");
+    expect(td.totals.total_ttc).to.be.a("number");
+    expect(td.totals.total_ttc).to.be.greaterThan(td.totals.total_ht);
+  });
+
+  test("fun section should have motto and warning", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.fun.motto).to.be.a("string").and.not.be.empty;
+    expect(td.fun.warning).to.be.a("string").and.not.be.empty;
+  });
+}

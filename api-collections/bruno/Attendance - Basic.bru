@@ -1,0 +1,91 @@
+meta {
+  name: Attendance - Basic
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{baseUrl}}/api/attendance
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "student_email": "jean.dupont@epitech.eu"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.template: eq attendance
+  res.body.printed: eq false
+  res.body.ticket_number: isString
+  res.body.student.name: isString
+  res.body.student.email: eq jean.dupont@epitech.eu
+  res.body.preview: isString
+  res.body.ticket_data: isDefined
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should have ok=true", function() {
+    const body = res.getBody();
+    expect(body.ok).to.be.true;
+  });
+
+  test("should use attendance template", function() {
+    const body = res.getBody();
+    expect(body.template).to.equal("attendance");
+  });
+
+  test("should derive student name from email", function() {
+    const body = res.getBody();
+    expect(body.student.name).to.equal("Jean Dupont");
+    expect(body.student.email).to.equal("jean.dupont@epitech.eu");
+  });
+
+  test("should NOT print by default", function() {
+    const body = res.getBody();
+    expect(body.printed).to.equal(false);
+  });
+
+  test("should return a ticket number", function() {
+    const body = res.getBody();
+    expect(body.ticket_number).to.be.a("string");
+    expect(body.ticket_number.length).to.equal(6);
+  });
+
+  test("should return a preview with student name", function() {
+    const body = res.getBody();
+    expect(body.preview).to.contain("Jean Dupont");
+    expect(body.preview).to.contain("EPITECH");
+  });
+
+  test("ticket_data should contain all sections", function() {
+    const td = res.getBody().ticket_data;
+    expect(td).to.have.property("merchant");
+    expect(td).to.have.property("order");
+    expect(td).to.have.property("transaction");
+    expect(td).to.have.property("staff");
+    expect(td).to.have.property("student");
+    expect(td).to.have.property("items");
+    expect(td).to.have.property("totals");
+    expect(td).to.have.property("qr_code");
+    expect(td).to.have.property("fun");
+    expect(td).to.have.property("footer");
+  });
+
+  test("QR code value should contain student email", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.qr_code.value).to.contain("jean.dupont@epitech.eu");
+  });
+}

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "HZTZPrinter API",
-    "description": "Complete test collection for the HZTZPrinter Flask API server.\n\nStart the server before running:\n```\npython fool_printer.py serve\n```\n\nDefault base URL: http://localhost:8360/api/\n\nEndpoints covered:\n- GET  /api/health\n- GET  /api/templates\n- POST /api/preview\n- POST /api/print\n- POST /api/qr\n- GET  /api/usb\n- GET  /api/test",
+    "description": "Complete test collection for the HZTZPrinter Flask API server.\n\nStart the server before running:\n```\npython fool_printer.py serve\n```\n\nDefault base URL: http://localhost:8360/api/\n\nEndpoints covered:\n- GET  /api/health\n- GET  /api/templates\n- POST /api/preview\n- POST /api/print\n- POST /api/attendance\n- POST /api/qr\n- GET  /api/usb\n- GET  /api/test",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "hztz-printer-api-collection"
   },
@@ -662,6 +662,355 @@
               "    const evtTest = body.results.find(r => r.name === 'Event template creation');",
               "    pm.expect(evtTest).to.not.be.undefined;",
               "    pm.expect(evtTest.detail).to.include('2 card rows');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Attendance — Basic",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_email\": \"jean.dupont@epitech.eu\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/attendance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "attendance"]
+        },
+        "description": "Generate a personalised student attendance ticket with only the email. Name, items, QR code, and funny elements are all auto-generated.\n\nExpected: ok=true, template=\"attendance\", student.name derived from email, preview contains EPITECH."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('template is attendance', function () {",
+              "    pm.expect(pm.response.json().template).to.eql('attendance');",
+              "});",
+              "",
+              "pm.test('student name derived from email', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.student.name).to.eql('Jean Dupont');",
+              "    pm.expect(body.student.email).to.eql('jean.dupont@epitech.eu');",
+              "});",
+              "",
+              "pm.test('printed is false by default', function () {",
+              "    pm.expect(pm.response.json().printed).to.eql(false);",
+              "});",
+              "",
+              "pm.test('ticket_number is a 6-digit string', function () {",
+              "    const tn = pm.response.json().ticket_number;",
+              "    pm.expect(tn).to.be.a('string');",
+              "    pm.expect(tn.length).to.eql(6);",
+              "});",
+              "",
+              "pm.test('preview contains student name and EPITECH', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.preview).to.include('Jean Dupont');",
+              "    pm.expect(body.preview).to.include('EPITECH');",
+              "});",
+              "",
+              "pm.test('ticket_data has all required sections', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td).to.have.property('merchant');",
+              "    pm.expect(td).to.have.property('order');",
+              "    pm.expect(td).to.have.property('transaction');",
+              "    pm.expect(td).to.have.property('staff');",
+              "    pm.expect(td).to.have.property('student');",
+              "    pm.expect(td).to.have.property('items');",
+              "    pm.expect(td).to.have.property('totals');",
+              "    pm.expect(td).to.have.property('qr_code');",
+              "    pm.expect(td).to.have.property('fun');",
+              "    pm.expect(td).to.have.property('footer');",
+              "});",
+              "",
+              "pm.test('QR code contains student email', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.qr_code.value).to.include('jean.dupont@epitech.eu');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Attendance — With Extend",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_email\": \"charles1.affouard@epitech.eu\",\n  \"extend\": {\n    \"merchant\": { \"name\": \"EPITECH LYON - CAMPUS MOUTON\" },\n    \"staff\": { \"seller\": \"Le Pion Officiel du 1er Avril\" },\n    \"items\": [\n      { \"quantity\": 1, \"designation\": \"Retard injustifie (flagrant)\", \"unit_price\": 42.00, \"total_price\": 42.00 },\n      { \"quantity\": 3, \"designation\": \"Soupir de professeur\", \"unit_price\": 0.50, \"total_price\": 1.50 }\n    ],\n    \"totals\": { \"total_ht\": 43.50, \"tva_amount\": 8.70, \"total_ttc\": 52.20 },\n    \"fun\": { \"motto\": \"Tu croyais echapper au scan ?\" },\n    \"qr_code\": { \"value\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ?student=charles1.affouard@epitech.eu&custom=true\" },\n    \"footer\": { \"message\": \"Poisson d'avril ! Mais le ticket est vrai.\" }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/attendance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "attendance"]
+        },
+        "description": "Test the extend parameter: deep-merge custom overrides on top of auto-generated ticket data. Verifies that dict fields are merged (address preserved) and lists/scalars are replaced."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('extend overrides merchant name', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.merchant.name).to.eql('EPITECH LYON - CAMPUS MOUTON');",
+              "});",
+              "",
+              "pm.test('deep merge preserves merchant address', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.merchant.address).to.eql('2 Rue du Professeur Charles Appleton');",
+              "});",
+              "",
+              "pm.test('extend overrides seller', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.staff.seller).to.eql('Le Pion Officiel du 1er Avril');",
+              "});",
+              "",
+              "pm.test('extend replaces items array', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.items).to.be.an('array').with.lengthOf(2);",
+              "    pm.expect(td.items[0].designation).to.eql('Retard injustifie (flagrant)');",
+              "});",
+              "",
+              "pm.test('extend overrides totals', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.totals.total_ttc).to.eql(52.20);",
+              "});",
+              "",
+              "pm.test('extend overrides fun.motto, keeps fun.warning (deep merge)', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.fun.motto).to.eql('Tu croyais echapper au scan ?');",
+              "    pm.expect(td.fun).to.have.property('warning');",
+              "});",
+              "",
+              "pm.test('extend overrides QR code', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.qr_code.value).to.include('custom=true');",
+              "});",
+              "",
+              "pm.test('preview reflects extended values', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.preview).to.include('EPITECH LYON - CAMPUS MOUTON');",
+              "    pm.expect(body.preview).to.include('Le Pion Officiel du 1er Avril');",
+              "    pm.expect(body.preview).to.include('Retard injustifie');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Attendance — Deterministic",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_email\": \"test.deterministic@epitech.eu\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/attendance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "attendance"]
+        },
+        "description": "Verify deterministic behaviour: same email always produces the same ticket number, 3-6 funny items, consistent totals, and fun section."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ticket_number is a 6-digit string', function () {",
+              "    const tn = pm.response.json().ticket_number;",
+              "    pm.expect(tn).to.be.a('string');",
+              "    pm.expect(tn.length).to.eql(6);",
+              "});",
+              "",
+              "pm.test('items count is between 3 and 6', function () {",
+              "    const items = pm.response.json().ticket_data.items;",
+              "    pm.expect(items.length).to.be.at.least(3);",
+              "    pm.expect(items.length).to.be.at.most(6);",
+              "});",
+              "",
+              "pm.test('totals are consistent', function () {",
+              "    const t = pm.response.json().ticket_data.totals;",
+              "    pm.expect(t.total_ht).to.be.a('number');",
+              "    pm.expect(t.tva_amount).to.be.a('number');",
+              "    pm.expect(t.total_ttc).to.be.a('number');",
+              "    pm.expect(t.total_ttc).to.be.greaterThan(t.total_ht);",
+              "});",
+              "",
+              "pm.test('fun section has motto and warning', function () {",
+              "    const f = pm.response.json().ticket_data.fun;",
+              "    pm.expect(f.motto).to.be.a('string').and.not.empty;",
+              "    pm.expect(f.warning).to.be.a('string').and.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Attendance — Custom Name & Seller",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_email\": \"marie.curie@epitech.eu\",\n  \"student_name\": \"Marie Curie (La Vraie)\",\n  \"scanned_by\": \"Albert Einstein\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/attendance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "attendance"]
+        },
+        "description": "Test student_name and scanned_by overrides: the student name should not be derived from email, and scanned_by should be used as the seller."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('uses provided student name', function () {",
+              "    pm.expect(pm.response.json().student.name).to.eql('Marie Curie (La Vraie)');",
+              "});",
+              "",
+              "pm.test('uses scanned_by as seller', function () {",
+              "    const td = pm.response.json().ticket_data;",
+              "    pm.expect(td.staff.seller).to.eql('Albert Einstein');",
+              "});",
+              "",
+              "pm.test('preview contains custom name', function () {",
+              "    pm.expect(pm.response.json().preview).to.include('Marie Curie (La Vraie)');",
+              "});",
+              "",
+              "pm.test('preview contains custom seller', function () {",
+              "    pm.expect(pm.response.json().preview).to.include('Albert Einstein');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Attendance — Error Missing Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_name\": \"Orphan Student\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/attendance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "attendance"]
+        },
+        "description": "Negative test — POST /api/attendance without the required student_email field. Should return 400."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('ok is false', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(false);",
+              "});",
+              "",
+              "pm.test('error mentions student_email', function () {",
+              "    pm.expect(pm.response.json().error).to.include('student_email');",
               "});"
             ]
           }

@@ -1,0 +1,56 @@
+meta {
+  name: Attendance - Custom Name
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{baseUrl}}/api/attendance
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "student_email": "marie.curie@epitech.eu",
+    "student_name": "Marie Curie (La Vraie)",
+    "scanned_by": "Albert Einstein"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.student.name: eq Marie Curie (La Vraie)
+  res.body.student.email: eq marie.curie@epitech.eu
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should use provided student name instead of deriving it", function() {
+    const body = res.getBody();
+    expect(body.student.name).to.equal("Marie Curie (La Vraie)");
+  });
+
+  test("should use provided scanned_by as seller", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.staff.seller).to.equal("Albert Einstein");
+  });
+
+  test("preview should contain custom name", function() {
+    const body = res.getBody();
+    expect(body.preview).to.contain("Marie Curie (La Vraie)");
+  });
+
+  test("preview should contain custom seller", function() {
+    const body = res.getBody();
+    expect(body.preview).to.contain("Albert Einstein");
+  });
+}

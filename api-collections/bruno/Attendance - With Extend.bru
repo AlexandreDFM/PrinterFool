@@ -1,0 +1,113 @@
+meta {
+  name: Attendance - With Extend
+  type: http
+  seq: 12
+}
+
+post {
+  url: {{baseUrl}}/api/attendance
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "student_email": "charles1.affouard@epitech.eu",
+    "extend": {
+      "merchant": {
+        "name": "EPITECH LYON - CAMPUS MOUTON"
+      },
+      "staff": {
+        "seller": "Le Pion Officiel du 1er Avril"
+      },
+      "items": [
+        {
+          "quantity": 1,
+          "designation": "Retard injustifie (flagrant)",
+          "unit_price": 42.00,
+          "total_price": 42.00
+        },
+        {
+          "quantity": 3,
+          "designation": "Soupir de professeur",
+          "unit_price": 0.50,
+          "total_price": 1.50
+        }
+      ],
+      "totals": {
+        "total_ht": 43.50,
+        "tva_amount": 8.70,
+        "total_ttc": 52.20
+      },
+      "fun": {
+        "motto": "Tu croyais echapper au scan ?"
+      },
+      "qr_code": {
+        "value": "https://www.youtube.com/watch?v=dQw4w9WgXcQ?student=charles1.affouard@epitech.eu&custom=true"
+      },
+      "footer": {
+        "message": "Poisson d'avril ! Mais le ticket est vrai."
+      }
+    }
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.template: eq attendance
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("extend should override merchant name", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.merchant.name).to.equal("EPITECH LYON - CAMPUS MOUTON");
+  });
+
+  test("extend should preserve merchant address (deep merge)", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.merchant.address).to.equal("2 Rue du Professeur Charles Appleton");
+  });
+
+  test("extend should override seller", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.staff.seller).to.equal("Le Pion Officiel du 1er Avril");
+  });
+
+  test("extend should replace items array entirely", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.items).to.be.an("array").with.lengthOf(2);
+    expect(td.items[0].designation).to.equal("Retard injustifie (flagrant)");
+  });
+
+  test("extend should override totals", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.totals.total_ttc).to.equal(52.20);
+  });
+
+  test("extend should override fun motto but keep warning", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.fun.motto).to.equal("Tu croyais echapper au scan ?");
+    expect(td.fun).to.have.property("warning");
+  });
+
+  test("extend should override QR code", function() {
+    const td = res.getBody().ticket_data;
+    expect(td.qr_code.value).to.contain("custom=true");
+  });
+
+  test("preview should reflect extended values", function() {
+    const body = res.getBody();
+    expect(body.preview).to.contain("EPITECH LYON - CAMPUS MOUTON");
+    expect(body.preview).to.contain("Le Pion Officiel du 1er Avril");
+    expect(body.preview).to.contain("Retard injustifie");
+  });
+}

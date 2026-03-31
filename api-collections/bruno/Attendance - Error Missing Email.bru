@@ -1,0 +1,43 @@
+meta {
+  name: Attendance - Error Missing Email
+  type: http
+  seq: 15
+}
+
+post {
+  url: {{baseUrl}}/api/attendance
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "student_name": "Orphan Student"
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.ok: eq false
+  res.body.error: contains student_email
+}
+
+tests {
+  test("should return 400 for missing email", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("ok should be false", function() {
+    const body = res.getBody();
+    expect(body.ok).to.equal(false);
+  });
+
+  test("error should mention student_email", function() {
+    const body = res.getBody();
+    expect(body.error).to.contain("student_email");
+  });
+}
