@@ -1,0 +1,41 @@
+meta {
+  name: Error - Missing Data
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{baseUrl}}/api/preview
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "paper_width": 48
+  }
+}
+
+assert {
+  res.status: eq 400
+  res.body.ok: eq false
+  res.body.error: contains data
+}
+
+tests {
+  test("returns 400 for missing data field", function() {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("ok is false", function() {
+    expect(res.getBody().ok).to.equal(false);
+  });
+
+  test("error message mentions missing field", function() {
+    expect(res.getBody().error).to.contain("data");
+  });
+}

@@ -1,0 +1,100 @@
+meta {
+  name: Preview Receipt
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/preview
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "data": {
+      "merchant": {
+        "name": "Coffee Shop Express",
+        "address": "42 Rue de la Paix"
+      },
+      "order": {
+        "commande_number": "CMD-2026-002156",
+        "ticket_number": "002156",
+        "caisse_number": "02"
+      },
+      "transaction": {
+        "date": "2026-03-30",
+        "hour": "14:32",
+        "type": "À emporter"
+      },
+      "staff": {
+        "seller": "Thomas Lefevre"
+      },
+      "items": [
+        {
+          "quantity": 1,
+          "designation": "Cappuccino Moyen",
+          "unit_price": 4.50,
+          "total_price": 4.50,
+          "tva": 0.72
+        },
+        {
+          "quantity": 2,
+          "designation": "Croissant Jambon Fromage",
+          "unit_price": 5.50,
+          "total_price": 11.00,
+          "tva": 1.76
+        },
+        {
+          "quantity": 1,
+          "designation": "Pain au Chocolat",
+          "unit_price": 3.00,
+          "total_price": 3.00,
+          "tva": 0.48
+        }
+      ],
+      "totals": {
+        "total_ht": 18.50,
+        "tva_amount": 2.96,
+        "total_ttc": 21.46
+      },
+      "qr_code": {
+        "value": "CMD-2026-002156-CAFE"
+      },
+      "footer": {
+        "message": "À bientôt !"
+      }
+    },
+    "paper_width": 48
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.template: eq receipt
+  res.body.count: gte 1
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should auto-detect receipt template", function() {
+    const body = res.getBody();
+    expect(body.ok).to.be.true;
+    expect(body.template).to.equal("receipt");
+  });
+
+  test("should return at least one preview", function() {
+    const body = res.getBody();
+    expect(body.previews).to.be.an("array");
+    expect(body.previews.length).to.be.greaterThan(0);
+  });
+
+  test("preview should contain merchant name", function() {
+    const body = res.getBody();
+    expect(body.previews[0]).to.contain("Coffee Shop Express");
+  });
+}

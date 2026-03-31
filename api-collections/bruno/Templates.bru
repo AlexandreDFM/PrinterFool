@@ -1,0 +1,18 @@
+meta {
+  name: Templates
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/templates
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.templates: isDefined
+  res.body.paper_widths: isDefined
+}

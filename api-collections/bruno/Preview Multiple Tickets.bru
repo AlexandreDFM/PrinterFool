@@ -1,0 +1,52 @@
+meta {
+  name: Preview Multiple Tickets
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/preview
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "data": [
+      {
+        "event": { "name": "Broadway Show", "date": "March 30, 2026", "time": "7:30 PM" },
+        "venue": { "name": "Theatre Royal", "address": "321 Main Street, NY" },
+        "seat": { "section": "Orchestra", "row": "K", "seat": "15", "gate": "Main" },
+        "barcode": { "value": "TH2026033001" },
+        "holder": { "name": "Marie Martin" }
+      },
+      {
+        "event": { "name": "Broadway Show", "date": "March 30, 2026", "time": "7:30 PM" },
+        "venue": { "name": "Theatre Royal", "address": "321 Main Street, NY" },
+        "seat": { "section": "Balcony", "row": "A", "seat": "8", "gate": "Side" },
+        "barcode": { "value": "TH2026033002" },
+        "holder": { "name": "Pierre Laurent" }
+      },
+      {
+        "event": { "name": "Broadway Show", "date": "March 30, 2026", "time": "7:30 PM" },
+        "venue": { "name": "Theatre Royal", "address": "321 Main Street, NY" },
+        "seat": { "section": "Mezzanine", "row": "C", "seat": "22", "gate": "Main" },
+        "barcode": { "value": "TH2026033003" },
+        "holder": { "name": "Sophie Leclerc" }
+      }
+    ],
+    "paper_width": 48
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.template: eq event
+  res.body.count: eq 3
+  res.body.previews: isDefined
+}

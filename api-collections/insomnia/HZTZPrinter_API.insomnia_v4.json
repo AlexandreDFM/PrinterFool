@@ -1,0 +1,636 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-01-01T00:00:00.000Z",
+  "__export_source": "HZTZPrinter/v1.0.0",
+  "resources": [
+    {
+      "_id": "wrk_hztz",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "HZTZPrinter API",
+      "description": "Complete collection for the HZTZPrinter Flask API server.\n\nStart the server before running:\n  python fool_printer.py serve\n\nDefault base URL: http://localhost:8360/api/\n\nEndpoints:\n  GET  /api/health\n  GET  /api/templates\n  POST /api/preview\n  POST /api/print\n  POST /api/qr\n  GET  /api/usb\n  GET  /api/test",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_hztz",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8360"
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "env_local",
+      "_type": "environment",
+      "parentId": "env_base",
+      "name": "Local (port 8360)",
+      "data": {
+        "baseUrl": "http://localhost:8360"
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl"]
+      },
+      "color": "#4a90d9",
+      "isPrivate": false,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "env_custom",
+      "_type": "environment",
+      "parentId": "env_base",
+      "name": "Custom Port",
+      "data": {
+        "baseUrl": "http://localhost:9000"
+      },
+      "dataPropertyOrder": {
+        "&": ["baseUrl"]
+      },
+      "color": "#e6a243",
+      "isPrivate": false,
+      "metaSortKey": 2
+    },
+    {
+      "_id": "fld_core",
+      "_type": "request_group",
+      "parentId": "wrk_hztz",
+      "name": "Core Endpoints",
+      "description": "Health check, available templates, USB device listing, and self-test suite.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "fld_preview",
+      "_type": "request_group",
+      "parentId": "wrk_hztz",
+      "name": "Preview",
+      "description": "Render tickets to text without connecting to the printer. Useful for debugging layouts and building web UIs.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 2
+    },
+    {
+      "_id": "fld_print",
+      "_type": "request_group",
+      "parentId": "wrk_hztz",
+      "name": "Print",
+      "description": "Send tickets to the ZJ-8360 thermal printer over USB. Requires the printer to be connected and powered on.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 3
+    },
+    {
+      "_id": "fld_qr",
+      "_type": "request_group",
+      "parentId": "wrk_hztz",
+      "name": "QR Code",
+      "description": "Generate QR codes as ASCII art (ascii/printer formats) or PNG images.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 4
+    },
+    {
+      "_id": "fld_errors",
+      "_type": "request_group",
+      "parentId": "wrk_hztz",
+      "name": "Error Cases",
+      "description": "Negative tests — verify that the API returns proper error responses for invalid inputs.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 5
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "Health Check",
+      "description": "Liveness probe. Returns 200 as long as the server process is running.\nDoes not require the printer to be connected.\n\nExpected response:\n  ok: true\n  status: \"ok\"\n  version: \"1.0.0\"\n  printer.vendor_id: \"0x416\"\n  printer.product_id: \"0x5011\"",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/health",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_templates",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "Templates",
+      "description": "List available template names and every accepted option value.\n\nExpected response:\n  templates: [\"event\", \"receipt\"]\n  paper_widths: [32, 40, 48]\n  ec_levels: [\"L\", \"M\", \"Q\", \"H\"]\n  qr_formats: [\"ascii\", \"printer\", \"png\"]\n  qr_sizes: [\"tiny\", \"small\", \"medium\", \"large\"]",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/templates",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_usb",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "USB Devices",
+      "description": "Enumerate all connected USB devices and flag the ZJ-8360 printer.\n\nExpected response:\n  count: <number>\n  printer_detected: <boolean>\n  devices: [{vendor_id, product_id, manufacturer, is_printer}, ...]",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/usb",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_test",
+      "_type": "request",
+      "parentId": "fld_core",
+      "name": "Self Tests",
+      "description": "Run 13 built-in self-tests covering module imports, template creation, field resolution, rendering, QR generation, and sample JSON loading. No printer needed.\n\nExpected response:\n  passed: 13\n  failed: 0\n  total: 13\n  results: [{name, status, detail}, ...]",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/test",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 4,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_preview_event",
+      "_type": "request",
+      "parentId": "fld_preview",
+      "name": "Preview Event Ticket",
+      "description": "Render a single event ticket to text. Template is auto-detected from the data keys (event, seat, holder → event).\n\nExpected: ok=true, template=\"event\", count=1, previews[0] contains \"Concert\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/preview",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": {\n    \"event\": {\n      \"name\": \"Concert d'été 2026\",\n      \"date\": \"15 juillet 2026\",\n      \"time\": \"20:00\"\n    },\n    \"venue\": {\n      \"name\": \"Amphithéâtre Central\",\n      \"address\": \"123 Parc Central, NY 10001\"\n    },\n    \"seat\": {\n      \"section\": \"A\",\n      \"row\": \"5\",\n      \"seat\": \"12\",\n      \"gate\": \"Nord\"\n    },\n    \"barcode\": {\n      \"value\": \"EVT00012345\"\n    },\n    \"holder\": {\n      \"name\": \"Jean Dupont\"\n    }\n  },\n  \"paper_width\": 48\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_preview_event_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_preview_receipt",
+      "_type": "request",
+      "parentId": "fld_preview",
+      "name": "Preview Receipt",
+      "description": "Render a receipt to text. The engine auto-detects the receipt template because of the merchant/order/items/totals keys.\n\nExpected: ok=true, template=\"receipt\", previews[0] contains \"Coffee Shop Express\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/preview",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": {\n    \"merchant\": {\n      \"name\": \"Coffee Shop Express\",\n      \"address\": \"42 Rue de la Paix\"\n    },\n    \"order\": {\n      \"commande_number\": \"CMD-2026-002156\",\n      \"ticket_number\": \"002156\",\n      \"caisse_number\": \"02\"\n    },\n    \"transaction\": {\n      \"date\": \"2026-03-30\",\n      \"hour\": \"14:32\",\n      \"type\": \"À emporter\"\n    },\n    \"staff\": {\n      \"seller\": \"Thomas Lefevre\"\n    },\n    \"items\": [\n      {\n        \"quantity\": 1,\n        \"designation\": \"Cappuccino Moyen\",\n        \"unit_price\": 4.50,\n        \"total_price\": 4.50,\n        \"tva\": 0.72\n      },\n      {\n        \"quantity\": 2,\n        \"designation\": \"Croissant Jambon Fromage\",\n        \"unit_price\": 5.50,\n        \"total_price\": 11.00,\n        \"tva\": 1.76\n      },\n      {\n        \"quantity\": 1,\n        \"designation\": \"Pain au Chocolat\",\n        \"unit_price\": 3.00,\n        \"total_price\": 3.00,\n        \"tva\": 0.48\n      }\n    ],\n    \"totals\": {\n      \"total_ht\": 18.50,\n      \"tva_amount\": 2.96,\n      \"total_ttc\": 21.46\n    },\n    \"qr_code\": {\n      \"value\": \"CMD-2026-002156-CAFE\"\n    },\n    \"footer\": {\n      \"message\": \"À bientôt !\"\n    }\n  },\n  \"paper_width\": 48\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_preview_receipt_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_preview_multi",
+      "_type": "request",
+      "parentId": "fld_preview",
+      "name": "Preview Multiple Tickets",
+      "description": "Preview a batch of 3 event tickets in a single request. The data field is an array.\n\nExpected: ok=true, template=\"event\", count=3, previews has 3 entries",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/preview",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": [\n    {\n      \"event\": { \"name\": \"Broadway Show\", \"date\": \"March 30, 2026\", \"time\": \"7:30 PM\" },\n      \"venue\": { \"name\": \"Theatre Royal\", \"address\": \"321 Main Street, NY\" },\n      \"seat\": { \"section\": \"Orchestra\", \"row\": \"K\", \"seat\": \"15\", \"gate\": \"Main\" },\n      \"barcode\": { \"value\": \"TH2026033001\" },\n      \"holder\": { \"name\": \"Marie Martin\" }\n    },\n    {\n      \"event\": { \"name\": \"Broadway Show\", \"date\": \"March 30, 2026\", \"time\": \"7:30 PM\" },\n      \"venue\": { \"name\": \"Theatre Royal\", \"address\": \"321 Main Street, NY\" },\n      \"seat\": { \"section\": \"Balcony\", \"row\": \"A\", \"seat\": \"8\", \"gate\": \"Side\" },\n      \"barcode\": { \"value\": \"TH2026033002\" },\n      \"holder\": { \"name\": \"Pierre Laurent\" }\n    },\n    {\n      \"event\": { \"name\": \"Broadway Show\", \"date\": \"March 30, 2026\", \"time\": \"7:30 PM\" },\n      \"venue\": { \"name\": \"Theatre Royal\", \"address\": \"321 Main Street, NY\" },\n      \"seat\": { \"section\": \"Mezzanine\", \"row\": \"C\", \"seat\": \"22\", \"gate\": \"Main\" },\n      \"barcode\": { \"value\": \"TH2026033003\" },\n      \"holder\": { \"name\": \"Sophie Leclerc\" }\n    }\n  ],\n  \"paper_width\": 48\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_preview_multi_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_preview_safe",
+      "_type": "request",
+      "parentId": "fld_preview",
+      "name": "Preview Event — Printer Safe",
+      "description": "Same event ticket but with printer_safe=true. Unicode characters (€, —, curly quotes) are replaced with ASCII equivalents.\n\nExpected: ok=true, printer_safe=true",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/preview",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": {\n    \"event\": {\n      \"name\": \"Concert d'été 2026\",\n      \"date\": \"15 juillet 2026\",\n      \"time\": \"20:00\"\n    },\n    \"venue\": {\n      \"name\": \"Amphithéâtre Central\",\n      \"address\": \"123 Parc Central, NY 10001\"\n    },\n    \"seat\": {\n      \"section\": \"A\",\n      \"row\": \"5\",\n      \"seat\": \"12\",\n      \"gate\": \"Nord\"\n    },\n    \"barcode\": {\n      \"value\": \"EVT00012345\"\n    },\n    \"holder\": {\n      \"name\": \"Jean Dupont\"\n    }\n  },\n  \"paper_width\": 48,\n  \"printer_safe\": true\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_preview_safe_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 4,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_print_event",
+      "_type": "request",
+      "parentId": "fld_print",
+      "name": "Print Event Ticket",
+      "description": "Send a ticket to the ZJ-8360 thermal printer over USB.\n\n⚠️ Requires the physical printer to be connected and powered on.\nReturns 200 + printed=1 on success, or 503 if the printer is not found.\n\nOptions:\n  no_cut: false — cut paper after printing\n  feed_lines: 3 — blank lines before cutting",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/print",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": {\n    \"event\": {\n      \"name\": \"Concert d'été 2026\",\n      \"date\": \"15 juillet 2026\",\n      \"time\": \"20:00\"\n    },\n    \"venue\": {\n      \"name\": \"Amphithéâtre Central\",\n      \"address\": \"123 Parc Central, NY 10001\"\n    },\n    \"seat\": {\n      \"section\": \"A\",\n      \"row\": \"5\",\n      \"seat\": \"12\",\n      \"gate\": \"Nord\"\n    },\n    \"barcode\": {\n      \"value\": \"EVT00012345\"\n    },\n    \"holder\": {\n      \"name\": \"Jean Dupont\"\n    }\n  },\n  \"paper_width\": 48,\n  \"no_cut\": false,\n  \"feed_lines\": 3\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_print_event_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_print_receipt",
+      "_type": "request",
+      "parentId": "fld_print",
+      "name": "Print Receipt",
+      "description": "Print a receipt to the thermal printer.\n\n⚠️ Requires the physical printer. Returns 503 if not connected.",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/print",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": {\n    \"merchant\": {\n      \"name\": \"Coffee Shop Express\",\n      \"address\": \"42 Rue de la Paix\"\n    },\n    \"order\": {\n      \"commande_number\": \"CMD-2026-002156\",\n      \"ticket_number\": \"002156\",\n      \"caisse_number\": \"02\"\n    },\n    \"transaction\": {\n      \"date\": \"2026-03-30\",\n      \"hour\": \"14:32\",\n      \"type\": \"À emporter\"\n    },\n    \"staff\": {\n      \"seller\": \"Thomas Lefevre\"\n    },\n    \"items\": [\n      {\n        \"quantity\": 1,\n        \"designation\": \"Cappuccino Moyen\",\n        \"unit_price\": 4.50,\n        \"total_price\": 4.50,\n        \"tva\": 0.72\n      },\n      {\n        \"quantity\": 2,\n        \"designation\": \"Croissant Jambon Fromage\",\n        \"unit_price\": 5.50,\n        \"total_price\": 11.00,\n        \"tva\": 1.76\n      }\n    ],\n    \"totals\": {\n      \"total_ht\": 15.50,\n      \"tva_amount\": 2.48,\n      \"total_ttc\": 17.98\n    },\n    \"qr_code\": {\n      \"value\": \"CMD-2026-002156-CAFE\"\n    },\n    \"footer\": {\n      \"message\": \"Merci et à bientôt !\"\n    }\n  },\n  \"paper_width\": 48,\n  \"no_cut\": false,\n  \"feed_lines\": 3\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_print_receipt_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_qr_ascii",
+      "_type": "request",
+      "parentId": "fld_qr",
+      "name": "QR ASCII",
+      "description": "Generate a QR code as Unicode block art (█ characters).\n\nExpected: ok=true, format=\"ascii\", art is a multiline string, lines > 0",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/qr",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": \"https://example.com/ticket/EVT00012345\",\n  \"format\": \"ascii\",\n  \"ec_level\": \"M\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_qr_ascii_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_qr_printer",
+      "_type": "request",
+      "parentId": "fld_qr",
+      "name": "QR Printer-Safe",
+      "description": "Generate a QR code using # characters instead of Unicode blocks.\nUses highest error correction (H = 30%).\n\nExpected: ok=true, format=\"printer\", art contains '#', ec_level=\"H\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/qr",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": \"TICKET-42-VERIFY\",\n  \"format\": \"printer\",\n  \"ec_level\": \"H\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_qr_printer_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_qr_png",
+      "_type": "request",
+      "parentId": "fld_qr",
+      "name": "QR PNG",
+      "description": "Generate a QR code as a PNG image.\n\nThe response is raw binary (Content-Type: image/png), NOT the usual JSON envelope.\nInsomnia will show the image in the preview pane.\n\nSizes: tiny (32×32), small (48×48), medium (96×96), large (144×144)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/qr",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": \"https://example.com/ticket/EVT00012345\",\n  \"format\": \"png\",\n  \"ec_level\": \"M\",\n  \"size\": \"large\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_qr_png_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_err_missing_data",
+      "_type": "request",
+      "parentId": "fld_errors",
+      "name": "Error — Missing Data Field",
+      "description": "POST /api/preview without the required 'data' field.\n\nExpected: 400, ok=false, error mentions \"data\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/preview",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"paper_width\": 48\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_err_missing_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 1,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_err_bad_template",
+      "_type": "request",
+      "parentId": "fld_errors",
+      "name": "Error — Invalid Template",
+      "description": "POST /api/preview with an unknown template name.\n\nExpected: 400, ok=false, error mentions \"nonexistent\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/preview",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": { \"event\": { \"name\": \"Test\" } },\n  \"template\": \"nonexistent\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_err_template_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 2,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_err_bad_width",
+      "_type": "request",
+      "parentId": "fld_errors",
+      "name": "Error — Invalid Paper Width",
+      "description": "POST /api/preview with paper_width=99 (only 32, 40, 48 are valid).\n\nExpected: 400, ok=false, error mentions \"paper_width\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/preview",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": { \"event\": { \"name\": \"Test\" } },\n  \"paper_width\": 99\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_err_width_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 3,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_err_bad_qr_format",
+      "_type": "request",
+      "parentId": "fld_errors",
+      "name": "Error — Invalid QR Format",
+      "description": "POST /api/qr with format=\"bmp\" (only ascii, printer, png are valid).\n\nExpected: 400, ok=false, error mentions \"format\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/qr",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"data\": \"test\",\n  \"format\": \"bmp\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "hdr_err_qr_fmt_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 4,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_err_404",
+      "_type": "request",
+      "parentId": "fld_errors",
+      "name": "Error — 404 Not Found",
+      "description": "GET a route that does not exist.\n\nExpected: 404, ok=false, error lists valid routes",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/nonexistent",
+      "body": {},
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 5,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_err_no_json",
+      "_type": "request",
+      "parentId": "fld_errors",
+      "name": "Error — No JSON Content-Type",
+      "description": "POST /api/preview with a plain text body instead of JSON.\n\nExpected: 400, ok=false, error mentions \"application/json\"",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/preview",
+      "body": {
+        "mimeType": "text/plain",
+        "text": "this is not json"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "text/plain",
+          "id": "hdr_err_nojson_ct"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 6,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    }
+  ]
+}

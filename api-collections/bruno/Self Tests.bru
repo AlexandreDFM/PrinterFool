@@ -1,0 +1,46 @@
+meta {
+  name: Self Tests
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/test
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.passed: isNumber
+  res.body.failed: isNumber
+  res.body.total: isNumber
+  res.body.results: isDefined
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("all tests should pass", function() {
+    const body = res.getBody();
+    expect(body.ok).to.equal(true);
+    expect(body.failed).to.equal(0);
+    expect(body.total).to.be.greaterThan(0);
+    expect(body.passed).to.equal(body.total);
+  });
+
+  test("results array should have correct structure", function() {
+    const body = res.getBody();
+    expect(body.results).to.be.an("array");
+    expect(body.results.length).to.equal(body.total);
+    body.results.forEach(function(r) {
+      expect(r).to.have.property("name");
+      expect(r).to.have.property("status");
+      expect(r).to.have.property("detail");
+      expect(r.status).to.equal("pass");
+    });
+  });
+}

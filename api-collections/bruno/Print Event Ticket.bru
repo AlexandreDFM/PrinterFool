@@ -1,0 +1,67 @@
+meta {
+  name: Print Event Ticket
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/print
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "data": {
+      "event": {
+        "name": "Concert d'été 2026",
+        "date": "15 juillet 2026",
+        "time": "20:00"
+      },
+      "venue": {
+        "name": "Amphithéâtre Central",
+        "address": "123 Parc Central, NY 10001"
+      },
+      "seat": {
+        "section": "A",
+        "row": "5",
+        "seat": "12",
+        "gate": "Nord"
+      },
+      "barcode": {
+        "value": "EVT00012345"
+      },
+      "holder": {
+        "name": "Jean Dupont"
+      }
+    },
+    "paper_width": 48,
+    "no_cut": false,
+    "feed_lines": 3
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.printed: eq 1
+  res.body.template: eq event
+  res.body.paper_width: eq 48
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should confirm ticket was printed", function() {
+    const body = res.getBody();
+    expect(body.ok).to.equal(true);
+    expect(body.printed).to.equal(1);
+    expect(body.template).to.equal("event");
+  });
+}

@@ -1,0 +1,43 @@
+meta {
+  name: QR PNG
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/qr
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "data": "https://example.com/ticket/EVT00012345",
+    "format": "png",
+    "ec_level": "M",
+    "size": "large"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.headers['content-type']: eq image/png
+}
+
+tests {
+  test("returns 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("content type is image/png", function() {
+    expect(res.getHeader('content-type')).to.equal('image/png');
+  });
+
+  test("response body is not empty", function() {
+    expect(res.getBody().length).to.be.greaterThan(0);
+  });
+}

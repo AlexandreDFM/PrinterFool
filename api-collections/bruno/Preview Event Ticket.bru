@@ -1,0 +1,75 @@
+meta {
+  name: Preview Event Ticket
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/preview
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "data": {
+      "event": {
+        "name": "Concert d'été 2026",
+        "date": "15 juillet 2026",
+        "time": "20:00"
+      },
+      "venue": {
+        "name": "Amphithéâtre Central",
+        "address": "123 Parc Central, NY 10001"
+      },
+      "seat": {
+        "section": "A",
+        "row": "5",
+        "seat": "12",
+        "gate": "Nord"
+      },
+      "barcode": {
+        "value": "EVT00012345"
+      },
+      "holder": {
+        "name": "Jean Dupont"
+      }
+    },
+    "paper_width": 48
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.template: eq event
+  res.body.count: eq 1
+  res.body.paper_width: eq 48
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should detect event template", function() {
+    const body = res.getBody();
+    expect(body.ok).to.equal(true);
+    expect(body.template).to.equal("event");
+  });
+
+  test("should return one preview", function() {
+    const body = res.getBody();
+    expect(body.count).to.equal(1);
+    expect(body.previews).to.be.an("array").with.lengthOf(1);
+  });
+
+  test("preview should contain event name", function() {
+    const body = res.getBody();
+    expect(body.previews[0]).to.include("Concert");
+  });
+}

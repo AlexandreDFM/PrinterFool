@@ -1,0 +1,40 @@
+meta {
+  name: Health Check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/health
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.status: eq ok
+  res.body.version: eq 1.0.0
+}
+
+tests {
+  test("should return 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("should have ok=true", function() {
+    const body = res.getBody();
+    expect(body.ok).to.be.true;
+  });
+
+  test("should include version", function() {
+    const body = res.getBody();
+    expect(body.version).to.equal("1.0.0");
+  });
+
+  test("should include printer info", function() {
+    const body = res.getBody();
+    expect(body.printer).to.have.property("vendor_id");
+    expect(body.printer).to.have.property("product_id");
+  });
+}

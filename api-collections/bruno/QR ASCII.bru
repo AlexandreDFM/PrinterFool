@@ -1,0 +1,44 @@
+meta {
+  name: QR ASCII
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/qr
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "data": "https://example.com/ticket/EVT00012345",
+    "format": "ascii",
+    "ec_level": "M"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.format: eq ascii
+  res.body.art: isString
+  res.body.lines: isNumber
+  res.body.data: eq https://example.com/ticket/EVT00012345
+}
+
+tests {
+  test("returns QR ASCII art", function() {
+    const body = res.getBody();
+    expect(body.ok).to.equal(true);
+    expect(body.format).to.equal("ascii");
+    expect(body.art).to.be.a("string");
+    expect(body.art.length).to.be.greaterThan(0);
+    expect(body.lines).to.be.greaterThan(0);
+    expect(body.ec_level).to.equal("M");
+  });
+}

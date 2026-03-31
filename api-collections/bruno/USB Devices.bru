@@ -1,0 +1,39 @@
+meta {
+  name: USB Devices
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/api/usb
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.ok: eq true
+  res.body.count: isNumber
+  res.body.printer_detected: isBoolean
+  res.body.devices: isArray
+}
+
+tests {
+  test("returns USB device list", function() {
+    const body = res.getBody();
+    expect(body.ok).to.be.true;
+    expect(body.count).to.be.a("number");
+    expect(body.devices).to.be.an("array");
+    expect(body).to.have.property("printer_detected");
+  });
+
+  test("each device has required fields", function() {
+    const body = res.getBody();
+    if (body.devices.length > 0) {
+      const device = body.devices[0];
+      expect(device).to.have.property("vendor_id");
+      expect(device).to.have.property("product_id");
+      expect(device).to.have.property("is_printer");
+    }
+  });
+}

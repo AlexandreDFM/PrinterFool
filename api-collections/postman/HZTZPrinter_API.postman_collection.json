@@ -1,0 +1,906 @@
+{
+  "info": {
+    "name": "HZTZPrinter API",
+    "description": "Complete test collection for the HZTZPrinter Flask API server.\n\nStart the server before running:\n```\npython fool_printer.py serve\n```\n\nDefault base URL: http://localhost:8360/api/\n\nEndpoints covered:\n- GET  /api/health\n- GET  /api/templates\n- POST /api/preview\n- POST /api/print\n- POST /api/qr\n- GET  /api/usb\n- GET  /api/test",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "hztz-printer-api-collection"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8360",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Liveness probe. Returns 200 as long as the server process is running. Does not require the printer to be connected."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('version is 1.0.0', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.version).to.eql('1.0.0');",
+              "});",
+              "",
+              "pm.test('status is ok', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.status).to.eql('ok');",
+              "});",
+              "",
+              "pm.test('printer info is present', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.printer).to.be.an('object');",
+              "    pm.expect(body.printer).to.have.property('vendor_id');",
+              "    pm.expect(body.printer).to.have.property('product_id');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Templates",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/templates",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "templates"]
+        },
+        "description": "List available template names and every accepted option value that can be passed to other endpoints."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('templates contains event and receipt', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.templates).to.be.an('array');",
+              "    pm.expect(body.templates).to.include('event');",
+              "    pm.expect(body.templates).to.include('receipt');",
+              "});",
+              "",
+              "pm.test('paper_widths contains 32, 40, 48', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.paper_widths).to.eql([32, 40, 48]);",
+              "});",
+              "",
+              "pm.test('ec_levels are present', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.ec_levels).to.eql(['L', 'M', 'Q', 'H']);",
+              "});",
+              "",
+              "pm.test('qr_formats are present', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.qr_formats).to.eql(['ascii', 'printer', 'png']);",
+              "});",
+              "",
+              "pm.test('qr_sizes are present', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.qr_sizes).to.eql(['tiny', 'small', 'medium', 'large']);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Preview Event Ticket",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": {\n    \"event\": {\n      \"name\": \"Concert d'été 2026\",\n      \"date\": \"15 juillet 2026\",\n      \"time\": \"20:00\"\n    },\n    \"venue\": {\n      \"name\": \"Amphithéâtre Central\",\n      \"address\": \"123 Parc Central, NY 10001\"\n    },\n    \"seat\": {\n      \"section\": \"A\",\n      \"row\": \"5\",\n      \"seat\": \"12\",\n      \"gate\": \"Nord\"\n    },\n    \"barcode\": {\n      \"value\": \"EVT00012345\"\n    },\n    \"holder\": {\n      \"name\": \"Jean Dupont\"\n    }\n  },\n  \"paper_width\": 48\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/preview",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "preview"]
+        },
+        "description": "Render a single event ticket to text without connecting to the printer. Template is auto-detected from the data keys."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('auto-detects event template', function () {",
+              "    pm.expect(pm.response.json().template).to.eql('event');",
+              "});",
+              "",
+              "pm.test('returns 1 preview', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.count).to.eql(1);",
+              "    pm.expect(body.previews).to.be.an('array').with.lengthOf(1);",
+              "});",
+              "",
+              "pm.test('paper_width is 48', function () {",
+              "    pm.expect(pm.response.json().paper_width).to.eql(48);",
+              "});",
+              "",
+              "pm.test('preview contains event name', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.previews[0]).to.include('Concert');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Preview Receipt",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": {\n    \"merchant\": {\n      \"name\": \"Coffee Shop Express\",\n      \"address\": \"42 Rue de la Paix\"\n    },\n    \"order\": {\n      \"commande_number\": \"CMD-2026-002156\",\n      \"ticket_number\": \"002156\",\n      \"caisse_number\": \"02\"\n    },\n    \"transaction\": {\n      \"date\": \"2026-03-30\",\n      \"hour\": \"14:32\",\n      \"type\": \"À emporter\"\n    },\n    \"staff\": {\n      \"seller\": \"Thomas Lefevre\"\n    },\n    \"items\": [\n      {\n        \"quantity\": 1,\n        \"designation\": \"Cappuccino Moyen\",\n        \"unit_price\": 4.50,\n        \"total_price\": 4.50,\n        \"tva\": 0.72\n      },\n      {\n        \"quantity\": 2,\n        \"designation\": \"Croissant Jambon Fromage\",\n        \"unit_price\": 5.50,\n        \"total_price\": 11.00,\n        \"tva\": 1.76\n      },\n      {\n        \"quantity\": 1,\n        \"designation\": \"Pain au Chocolat\",\n        \"unit_price\": 3.00,\n        \"total_price\": 3.00,\n        \"tva\": 0.48\n      }\n    ],\n    \"totals\": {\n      \"total_ht\": 18.50,\n      \"tva_amount\": 2.96,\n      \"total_ttc\": 21.46\n    },\n    \"qr_code\": {\n      \"value\": \"CMD-2026-002156-CAFE\"\n    },\n    \"footer\": {\n      \"message\": \"À bientôt !\"\n    }\n  },\n  \"paper_width\": 48\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/preview",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "preview"]
+        },
+        "description": "Render a receipt to text. The engine auto-detects the receipt template because of the merchant/order/items/totals keys."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('auto-detects receipt template', function () {",
+              "    pm.expect(pm.response.json().template).to.eql('receipt');",
+              "});",
+              "",
+              "pm.test('returns at least 1 preview', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.previews).to.be.an('array');",
+              "    pm.expect(body.previews.length).to.be.greaterThan(0);",
+              "});",
+              "",
+              "pm.test('preview contains merchant name', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.previews[0]).to.include('Coffee Shop Express');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Preview Multiple Tickets",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": [\n    {\n      \"event\": { \"name\": \"Broadway Show\", \"date\": \"March 30, 2026\", \"time\": \"7:30 PM\" },\n      \"venue\": { \"name\": \"Theatre Royal\", \"address\": \"321 Main Street, NY\" },\n      \"seat\": { \"section\": \"Orchestra\", \"row\": \"K\", \"seat\": \"15\", \"gate\": \"Main\" },\n      \"barcode\": { \"value\": \"TH2026033001\" },\n      \"holder\": { \"name\": \"Marie Martin\" }\n    },\n    {\n      \"event\": { \"name\": \"Broadway Show\", \"date\": \"March 30, 2026\", \"time\": \"7:30 PM\" },\n      \"venue\": { \"name\": \"Theatre Royal\", \"address\": \"321 Main Street, NY\" },\n      \"seat\": { \"section\": \"Balcony\", \"row\": \"A\", \"seat\": \"8\", \"gate\": \"Side\" },\n      \"barcode\": { \"value\": \"TH2026033002\" },\n      \"holder\": { \"name\": \"Pierre Laurent\" }\n    },\n    {\n      \"event\": { \"name\": \"Broadway Show\", \"date\": \"March 30, 2026\", \"time\": \"7:30 PM\" },\n      \"venue\": { \"name\": \"Theatre Royal\", \"address\": \"321 Main Street, NY\" },\n      \"seat\": { \"section\": \"Mezzanine\", \"row\": \"C\", \"seat\": \"22\", \"gate\": \"Main\" },\n      \"barcode\": { \"value\": \"TH2026033003\" },\n      \"holder\": { \"name\": \"Sophie Leclerc\" }\n    }\n  ],\n  \"paper_width\": 48\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/preview",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "preview"]
+        },
+        "description": "Preview a batch of 3 event tickets in a single request. The data field is an array."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('auto-detects event template', function () {",
+              "    pm.expect(pm.response.json().template).to.eql('event');",
+              "});",
+              "",
+              "pm.test('returns 3 previews', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.count).to.eql(3);",
+              "    pm.expect(body.previews).to.be.an('array').with.lengthOf(3);",
+              "});",
+              "",
+              "pm.test('each preview is a non-empty string', function () {",
+              "    const body = pm.response.json();",
+              "    body.previews.forEach(function (p, i) {",
+              "        pm.expect(p).to.be.a('string').and.to.have.length.greaterThan(0);",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Print Event Ticket",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": {\n    \"event\": {\n      \"name\": \"Concert d'été 2026\",\n      \"date\": \"15 juillet 2026\",\n      \"time\": \"20:00\"\n    },\n    \"venue\": {\n      \"name\": \"Amphithéâtre Central\",\n      \"address\": \"123 Parc Central, NY 10001\"\n    },\n    \"seat\": {\n      \"section\": \"A\",\n      \"row\": \"5\",\n      \"seat\": \"12\",\n      \"gate\": \"Nord\"\n    },\n    \"barcode\": {\n      \"value\": \"EVT00012345\"\n    },\n    \"holder\": {\n      \"name\": \"Jean Dupont\"\n    }\n  },\n  \"paper_width\": 48,\n  \"no_cut\": false,\n  \"feed_lines\": 3\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/print",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "print"]
+        },
+        "description": "Send a ticket to the ZJ-8360 thermal printer over USB.\n\n⚠️ Requires the physical printer to be connected and powered on. Returns 503 if the printer is not found."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// This test will pass when the printer is connected (200)",
+              "// and gracefully handle the case where it is not (503)",
+              "",
+              "if (pm.response.code === 200) {",
+              "    pm.test('Status code is 200', function () {",
+              "        pm.response.to.have.status(200);",
+              "    });",
+              "",
+              "    pm.test('ok is true', function () {",
+              "        pm.expect(pm.response.json().ok).to.eql(true);",
+              "    });",
+              "",
+              "    pm.test('printed 1 ticket', function () {",
+              "        const body = pm.response.json();",
+              "        pm.expect(body.printed).to.eql(1);",
+              "        pm.expect(body.template).to.eql('event');",
+              "        pm.expect(body.paper_width).to.eql(48);",
+              "    });",
+              "} else if (pm.response.code === 503) {",
+              "    pm.test('Printer not connected — 503 expected', function () {",
+              "        pm.response.to.have.status(503);",
+              "        const body = pm.response.json();",
+              "        pm.expect(body.ok).to.eql(false);",
+              "        pm.expect(body.error).to.be.a('string');",
+              "    });",
+              "} else {",
+              "    pm.test('Unexpected status code: ' + pm.response.code, function () {",
+              "        pm.expect.fail('Expected 200 or 503, got ' + pm.response.code);",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "QR ASCII",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": \"https://example.com/ticket/EVT00012345\",\n  \"format\": \"ascii\",\n  \"ec_level\": \"M\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/qr",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "qr"]
+        },
+        "description": "Generate a QR code as Unicode block art (ascii format). Returns JSON with the art as a multiline string."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('format is ascii', function () {",
+              "    pm.expect(pm.response.json().format).to.eql('ascii');",
+              "});",
+              "",
+              "pm.test('art is a non-empty string', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.art).to.be.a('string');",
+              "    pm.expect(body.art.length).to.be.greaterThan(0);",
+              "});",
+              "",
+              "pm.test('lines count is positive', function () {",
+              "    pm.expect(pm.response.json().lines).to.be.greaterThan(0);",
+              "});",
+              "",
+              "pm.test('ec_level is M', function () {",
+              "    pm.expect(pm.response.json().ec_level).to.eql('M');",
+              "});",
+              "",
+              "pm.test('data matches input', function () {",
+              "    pm.expect(pm.response.json().data).to.eql('https://example.com/ticket/EVT00012345');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "QR Printer-Safe",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": \"TICKET-42-VERIFY\",\n  \"format\": \"printer\",\n  \"ec_level\": \"H\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/qr",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "qr"]
+        },
+        "description": "Generate a QR code using printer-safe # characters instead of Unicode blocks."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('format is printer', function () {",
+              "    pm.expect(pm.response.json().format).to.eql('printer');",
+              "});",
+              "",
+              "pm.test('art contains # characters', function () {",
+              "    pm.expect(pm.response.json().art).to.include('#');",
+              "});",
+              "",
+              "pm.test('ec_level is H', function () {",
+              "    pm.expect(pm.response.json().ec_level).to.eql('H');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "QR PNG",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": \"https://example.com/ticket/EVT00012345\",\n  \"format\": \"png\",\n  \"ec_level\": \"M\",\n  \"size\": \"large\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/qr",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "qr"]
+        },
+        "description": "Generate a QR code as a PNG image. The response is raw binary (image/png), not JSON."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Content-Type is image/png', function () {",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.eql('image/png');",
+              "});",
+              "",
+              "pm.test('Response body is not empty', function () {",
+              "    pm.expect(pm.response.stream.length).to.be.greaterThan(0);",
+              "});",
+              "",
+              "pm.test('Starts with PNG magic bytes', function () {",
+              "    // PNG signature: 0x89 0x50 0x4E 0x47 = \\x89PNG",
+              "    const buf = pm.response.stream;",
+              "    pm.expect(buf[0]).to.eql(0x89);",
+              "    pm.expect(buf[1]).to.eql(0x50); // P",
+              "    pm.expect(buf[2]).to.eql(0x4E); // N",
+              "    pm.expect(buf[3]).to.eql(0x47); // G",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "USB Devices",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/usb",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "usb"]
+        },
+        "description": "Enumerate all connected USB devices and flag whether the ZJ-8360 printer is among them."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('count is a number', function () {",
+              "    pm.expect(pm.response.json().count).to.be.a('number');",
+              "});",
+              "",
+              "pm.test('printer_detected is a boolean', function () {",
+              "    pm.expect(pm.response.json().printer_detected).to.be.a('boolean');",
+              "});",
+              "",
+              "pm.test('devices is an array', function () {",
+              "    pm.expect(pm.response.json().devices).to.be.an('array');",
+              "});",
+              "",
+              "pm.test('each device has required fields', function () {",
+              "    const devices = pm.response.json().devices;",
+              "    if (devices.length > 0) {",
+              "        devices.forEach(function (d) {",
+              "            pm.expect(d).to.have.property('vendor_id');",
+              "            pm.expect(d).to.have.property('product_id');",
+              "            pm.expect(d).to.have.property('is_printer');",
+              "        });",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Self Tests",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/test",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test"]
+        },
+        "description": "Run 13 built-in self-tests covering module imports, template creation, field resolution, rendering, QR generation, and sample JSON loading. No printer needed."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('ok is true', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(true);",
+              "});",
+              "",
+              "pm.test('no tests failed', function () {",
+              "    pm.expect(pm.response.json().failed).to.eql(0);",
+              "});",
+              "",
+              "pm.test('total is greater than 0', function () {",
+              "    pm.expect(pm.response.json().total).to.be.greaterThan(0);",
+              "});",
+              "",
+              "pm.test('passed equals total', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.passed).to.eql(body.total);",
+              "});",
+              "",
+              "pm.test('results array has correct structure', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.results).to.be.an('array');",
+              "    pm.expect(body.results.length).to.eql(body.total);",
+              "    body.results.forEach(function (r) {",
+              "        pm.expect(r).to.have.property('name');",
+              "        pm.expect(r).to.have.property('status');",
+              "        pm.expect(r).to.have.property('detail');",
+              "        pm.expect(r.status).to.eql('pass');",
+              "    });",
+              "});",
+              "",
+              "pm.test('event template has 2 card rows', function () {",
+              "    const body = pm.response.json();",
+              "    const evtTest = body.results.find(r => r.name === 'Event template creation');",
+              "    pm.expect(evtTest).to.not.be.undefined;",
+              "    pm.expect(evtTest.detail).to.include('2 card rows');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Error — Missing Data Field",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paper_width\": 48\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/preview",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "preview"]
+        },
+        "description": "Negative test — POST /api/preview without the required 'data' field. Should return 400 with ok=false."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('ok is false', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(false);",
+              "});",
+              "",
+              "pm.test('error message mentions data', function () {",
+              "    pm.expect(pm.response.json().error.toLowerCase()).to.include('data');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Error — Invalid Template",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": { \"event\": { \"name\": \"Test\" } },\n  \"template\": \"nonexistent\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/preview",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "preview"]
+        },
+        "description": "Negative test — POST /api/preview with an unknown template name. Should return 400 with ok=false."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('ok is false', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(false);",
+              "});",
+              "",
+              "pm.test('error mentions unknown template', function () {",
+              "    pm.expect(pm.response.json().error.toLowerCase()).to.include('nonexistent');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Error — Invalid Paper Width",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": { \"event\": { \"name\": \"Test\" } },\n  \"paper_width\": 99\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/preview",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "preview"]
+        },
+        "description": "Negative test — POST /api/preview with an invalid paper_width. Should return 400 with ok=false."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('ok is false', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(false);",
+              "});",
+              "",
+              "pm.test('error mentions paper_width', function () {",
+              "    pm.expect(pm.response.json().error.toLowerCase()).to.include('paper_width');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Error — Invalid QR Format",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": \"test\",\n  \"format\": \"bmp\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/qr",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "qr"]
+        },
+        "description": "Negative test — POST /api/qr with an unsupported format. Should return 400."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 400', function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test('ok is false', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(false);",
+              "});",
+              "",
+              "pm.test('error mentions format', function () {",
+              "    pm.expect(pm.response.json().error.toLowerCase()).to.include('format');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Error — 404 Not Found",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/nonexistent",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "nonexistent"]
+        },
+        "description": "Negative test — GET a route that does not exist. Should return 404 with ok=false and a helpful error message listing valid routes."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status code is 404', function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test('ok is false', function () {",
+              "    pm.expect(pm.response.json().ok).to.eql(false);",
+              "});",
+              "",
+              "pm.test('error message lists available routes', function () {",
+              "    const err = pm.response.json().error;",
+              "    pm.expect(err).to.include('/api/health');",
+              "    pm.expect(err).to.include('/api/preview');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    }
+  ]
+}
