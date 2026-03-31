@@ -10,6 +10,7 @@ GET  /api/health       — liveness probe
 GET  /api/templates    — list available templates and paper widths
 POST /api/preview      — render ticket(s) to text  (no printer required)
 POST /api/print        — send ticket(s) to the thermal printer
+POST /api/attendance   — generate personalised student attendance ticket
 POST /api/qr           — generate a QR code (ASCII art or PNG image)
 GET  /api/usb          — enumerate connected USB devices
 GET  /api/test         — run built-in self-test suite
@@ -22,6 +23,9 @@ All JSON endpoints return:
 
 import os
 import logging
+import random
+import hashlib
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from .printer import ZJ8360Printer
@@ -42,13 +46,15 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 TEMPLATE_TYPES: Dict[str, Any] = {
-    "event":   TemplateBuilder.create_event_template,
-    "receipt": TemplateBuilder.create_receipt_template,
+    "event":      TemplateBuilder.create_event_template,
+    "receipt":    TemplateBuilder.create_receipt_template,
+    "attendance": TemplateBuilder.create_attendance_template,
 }
 
 _TEMPLATE_SIGNATURES: Dict[str, set] = {
-    "receipt": {"merchant", "order", "items", "totals"},
-    "event":   {"event", "seat", "holder"},
+    "attendance": {"student"},
+    "receipt":    {"merchant", "order", "items", "totals"},
+    "event":      {"event", "seat", "holder"},
 }
 
 # ---------------------------------------------------------------------------
@@ -485,6 +491,422 @@ def create_app() -> "Flask":  # noqa: F821  (Flask typed as string to allow lazy
         })
 
     # =========================================================================
+    # POST /api/attendance
+    # =========================================================================
+    #
+    # Body (JSON):
+    #   {
+    #     "student_email":  "prenom.nom@epitech.eu",       REQUIRED
+    #     "student_name":   "Prenom Nom",                   optional (derived from email)
+    #     "scanned_by":     "Staff Name",                   optional
+    #     "paper_width":    32 | 40 | 48,                   optional (default: 48)
+    #     "print":          true | false,                   optional (default: false)
+    #     "no_cut":         true | false,                   optional (default: false)
+    #     "feed_lines":     3,                              optional (default: 3)
+    #     "extend":         { ... }                         optional — deep-merge overrides
+    #   }
+    #
+    # The "extend" object lets callers override ANY auto-generated field.
+    # It is deep-merged on top of the generated ticket_data, so you only
+    # need to specify the keys you want to change.
+    #
+    # Customisable fields via "extend":
+    # ┌─────────────────────────────────────────────────────────────────┐
+    # │ merchant.name          — school / org name (default: EPITECH)  │
+    # │ merchant.address       — address line                          │
+    # │ order.commande_number  — override generated CMD-xxxx           │
+    # │ order.ticket_number    — override generated ticket number      │
+    # │ order.caisse_number    — cash register number                  │
+    # │ transaction.date       — override date  (default: today)       │
+    # │ transaction.hour       — override time  (default: now)         │
+    # │ transaction.type       — "Sur place" / "A emporter" / custom   │
+    # │ staff.seller           — override random funny seller name     │
+    # │ student.name           — override derived student name         │
+    # │ student.email          — override email on ticket              │
+    # │ items                  — full replacement of the items array   │
+    # │ totals.total_ht        — override HT total                    │
+    # │ totals.tva_amount      — override TVA                         │
+    # │ totals.total_ttc       — override TTC total                   │
+    # │ qr_code.value          — override QR code URL / data          │
+    # │ fun.motto              — override funny motto line             │
+    # │ fun.warning            — override warning line                 │
+    # │ footer.message         — override footer text                  │
+    # └─────────────────────────────────────────────────────────────────┘
+    #
+    # Example with extend:
+    #   {
+    #     "student_email": "jean.dupont@epitech.eu",
+    #     "extend": {
+    #       "merchant": { "name": "EPITECH LYON" },
+    #       "staff":    { "seller": "Le Pion Officiel" },
+    #       "fun":      { "motto": "Tu croyais echapper au scan ?" },
+    #       "qr_code":  { "value": "https://my-custom-url.com/verify" },
+    #       "items": [
+    #         { "quantity": 1, "designation": "Retard injustifie", "unit_price": 42, "total_price": 42 }
+    #       ],
+    #       "totals":   { "total_ht": 42, "tva_amount": 8.4, "total_ttc": 50.4 }
+    #     }
+    #   }
+    #
+    # Response:
+    #   {
+    #     "ok":           true,
+    #     "student":      { "name": "...", "email": "..." },
+    #     "ticket_number": "001842",
+    #     "template":     "attendance",
+    #     "paper_width":  48,
+    #     "printed":      false,
+    #     "preview":      "<rendered text>",
+    #     "ticket_data":  { ... }
+    #   }
+
+    # -- Deep-merge helper -------------------------------------------------
+
+    def _deep_merge(base: dict, override: dict) -> dict:
+        """Recursively merge *override* into *base* (returns a new dict).
+
+        - Dict values are merged recursively.
+        - Lists and scalars in *override* fully replace the base value.
+        - Keys present only in *base* are kept as-is.
+        """
+        merged = base.copy()
+        for key, val in override.items():
+            if (
+                key in merged
+                and isinstance(merged[key], dict)
+                and isinstance(val, dict)
+            ):
+                merged[key] = _deep_merge(merged[key], val)
+            else:
+                merged[key] = val
+        return merged
+
+    # -- Funny data pools for randomisation --------------------------------
+
+    _FUNNY_SELLERS = [
+        "Jean-Michel Bricoleur",
+        "Mme Krabappel",
+        "Gordon Ramsay (enervE)",
+        "Le Stagiaire du Mardi",
+        "ChatGPT (en greve)",
+        "Un pigeon savant",
+        "Mister Robot",
+        "Gandalf le Gris",
+        "L'etudiant de 5e annee",
+        "Le fantome du Hub",
+        "Master Yoda (cuisine fusion)",
+        "Un Bocal en furie",
+        "La souris du serveur",
+        "Luigi (plombier/cuisinier)",
+        "Patrick l'etoile de mer",
+    ]
+
+    _FUNNY_ITEMS_POOL = [
+        ("Air frais d'Epitech (edition limitee)", 42.00),
+        ("Licence StackOverflow Premium", 199.99),
+        ("1h de WiFi stable", 89.90),
+        ("Douche de lumiere naturelle", 15.50),
+        ("Cours de cuisine par Moulinex", 35.00),
+        ("Cafe qui marche vraiment", 999.99),
+        ("Place de parking imaginaire", 75.00),
+        ("Excuse valide pour retard", 12.50),
+        ("Ticket de bus invisible", 1.90),
+        ("Motivation (en rupture)", 0.01),
+        ("Compilation sans erreur", 404.00),
+        ("Bug gratuit (offert)", 0.00),
+        ("Nuit blanche tout compris", 23.59),
+        ("Segfault artisanal", 11.11),
+        ("Variable bien nommee", 3.14),
+        ("Code qui marche du 1er coup", 777.77),
+        ("Push force sur main", 666.66),
+        ("Merge conflict resolution", 50.00),
+        ("README.md a jour", 100.00),
+        ("Norminette satisfaite", 42.42),
+        ("Sommeil (8h, bio)", 88.88),
+        ("Chaise ergonomique (reve)", 599.00),
+        ("Diplome en papier recycle", 9999.99),
+        ("Croissant quantique", 7.77),
+        ("Sandwich au malloc", 13.37),
+        ("Cookie (pas HTTP)", 2.50),
+        ("Tasse de the nullptr", 4.04),
+        ("Salade de pointeurs", 8.08),
+        ("Baguette de debug", 5.55),
+        ("Eau source de bugs", 1.00),
+    ]
+
+    _FUNNY_MOTTOS = [
+        "La presence est obligatoire, le fun est optionnel",
+        "Code, mange, dors... ah non, juste code",
+        "Epitech : ou le cafe est un groupe alimentaire",
+        "Aujourd'hui est un bon jour pour un segfault",
+        "La cantine n'existe pas, et toi non plus",
+        "malloc(happiness) returned NULL",
+        "git commit -m 'je suis la'",
+        "while(alive) { code(); }",
+        "404 : Motivation Not Found",
+        "Ton futur employeur regarde ce ticket",
+        "Ce ticket s'autodEtruira dans 5... 4...",
+        "Tu viens de mass print un ticket de caisse",
+        "C'est pas un bug, c'est une feature",
+    ]
+
+    _FUNNY_WARNINGS = [
+        "Ce ticket doit etre presente EN PERSONNE a 17h30",
+        "Ticket non echangeable, non remboursable, non negociable",
+        "Conservation: garder loin du cafe et des larmes",
+        "Toute ressemblance avec un vrai ticket est fortuite",
+        "Ingredients: papier, encre, desespoir, humour",
+        "Si tu perds ce ticket, recommence ta journee",
+        "Ce ticket a ete imprime par une imprimante heureuse",
+        "Ne pas plier, ne pas froisser, ne pas manger",
+        "Validite: aujourd'hui uniquement (pas demain, JAMAIS)",
+    ]
+
+    _FUNNY_FOOTERS = [
+        "Merci de votre visite dans notre etablissement fictif !",
+        "A bientot ! (vous n'avez pas le choix)",
+        "Bonne journee ! Ou pas. On est pas vos parents.",
+        "Conservez ce ticket, il vaut de l'or (non)",
+        "Merci d'avoir scan ta carte, champion !",
+        "Ce ticket a ete fabrique avec amour et segfaults",
+        "Revenez demain pour un autre ticket inutile !",
+        ">>> print('Merci et a bientot !')",
+        "return 0; // tout s'est bien passe (ou pas)",
+    ]
+
+    _TROLL_URLS = [
+        # --- Rickroll classics ---
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",   # Never Gonna Give You Up
+        "https://www.youtube.com/watch?v=xvFZjo5PgG0",   # Rickroll variante (redirect)
+        "https://www.youtube.com/watch?v=iik25wqIuFo",   # Rickroll HD remaster
+        # --- Earworm musicaux ---
+        #DEAD "https://www.youtube.com/watch?v=gy1B3agGNxw",   # Epic Sax Guy (10h dans ta tete)
+        #DEAD  "https://www.youtube.com/watch?v=QH2-TGUlwu4",   # Nyan Cat (10h de chat arc-en-ciel)
+        #DEAD "https://www.youtube.com/watch?v=feA64wXhbJU",   # Shooting Stars meme
+        #DEAD "https://www.youtube.com/watch?v=KmtzQCSh6xk",   # Numa Numa (Dragostea Din Tei)
+        "https://www.youtube.com/watch?v=oavMtUWDBTM",   # Trololo (Eduard Khil)
+        "https://www.youtube.com/watch?v=k85mRPqvMbE",   # Crazy Frog - Axel F
+        #DEAD "https://www.youtube.com/watch?v=zvq9rSmFAb0",   # Caramelldansen
+        "https://www.youtube.com/watch?v=y6120QOlsfU",   # Darude - Sandstorm
+        "https://www.youtube.com/watch?v=G1IbRujko-A",   # Gandalf Sax Guy 10h
+        #DEAD "https://www.youtube.com/watch?v=XCiDuy4mrWU",   # Running in the 90s
+        "https://www.youtube.com/watch?v=dv13gl0a-FA",   # Deja Vu (Initial D)
+        #DEAD "https://www.youtube.com/watch?v=vTIIMJ9tUc8",   # Tunak Tunak Tun
+        #DEAD "https://www.youtube.com/watch?v=1wnE4vF9CQ4",   # Leek Spin (Ievan Polkka)
+        # --- Anthems memesques ---
+        "https://www.youtube.com/watch?v=L_jWHffIx5E",   # All Star - Smash Mouth (Shrek)
+        "https://www.youtube.com/watch?v=LDU_Txk06tM",   # Crab Rave
+        "https://www.youtube.com/watch?v=ZZ5LpwO-An4",   # He-Man HEYYEYAAEYAA
+        "https://www.youtube.com/watch?v=PfYnvDL0Qcw",   # We Are Number One (Lazy Town)
+        "https://www.youtube.com/watch?v=9bZkp7q19f0",   # Gangnam Style
+        "https://www.youtube.com/watch?v=jofNR_WkoCE",   # What Does The Fox Say
+        "https://www.youtube.com/watch?v=kfVsfOSbJY0",   # Friday - Rebecca Black
+        "https://www.youtube.com/watch?v=EwTZ2xpQwpA",   # Chocolate Rain
+        "https://www.youtube.com/watch?v=Ct6BUPvE2sM",   # PPAP (Pen Pineapple Apple Pen)
+        "https://www.youtube.com/watch?v=XqZsoesa55w",   # Baby Shark
+        "https://www.youtube.com/watch?v=j9V78UbdzWI",   # Coffin Dance (Astronomia)
+        # --- Animaux legendaires ---
+        "https://www.youtube.com/watch?v=MtN1YnoL46Q",   # Duck Song ("got any grapes?")
+        "https://www.youtube.com/watch?v=J---aiyznGQ",   # Keyboard Cat
+        #DEAD "https://www.youtube.com/watch?v=Awf45u6zrP0",   # Sail Cat (AWOLNATION)
+        "https://www.youtube.com/watch?v=EIyixC9NsLI",   # Badger Badger Badger
+        "https://www.youtube.com/watch?v=p3G5IXn0K7A",   # Hamster Dance
+        #DEAD "https://www.youtube.com/watch?v=a1Y73sPHKxw",   # Dramatic Chipmunk
+        "https://www.youtube.com/watch?v=CMNry4PE93Y",   # I Like Turtles
+        # --- Prank / jumpscare wholesome ---
+        "https://www.youtube.com/watch?v=6n3pFFPSlW4",   # Gnome ("you've been gnomed")
+        "https://www.youtube.com/watch?v=fC7oUOUEEi4",   # Get Stick Bugged lol
+        "https://www.youtube.com/watch?v=Wl959QnD3lM",   # Wide Putin Walking
+        "https://www.youtube.com/watch?v=wRRsXxE1KVY",   # John Cena Prank Call
+        "https://www.youtube.com/watch?v=ZXsQAXx_ao0",   # Shia LaBeouf "JUST DO IT"
+        "https://www.youtube.com/watch?v=QkWS9PiXekE",   # THIS IS SPARTA
+        # --- Rires contagieux ---
+        "https://www.youtube.com/watch?v=WDiB4rtp1qw",   # El Risitas (Spanish Laughing Guy)
+        "https://www.youtube.com/watch?v=OQSNhk5ICTI",   # Double Rainbow
+        "https://www.youtube.com/watch?v=mLyOj_QD4a4",   # Leeroy Jenkins
+        # --- Nostalgie 2000s ---
+        "https://www.youtube.com/watch?v=s8MDNFaGfT4",   # Peanut Butter Jelly Time
+        "https://www.youtube.com/watch?v=CsGYh8AacgY",   # Charlie the Unicorn
+        "https://www.youtube.com/watch?v=ETfiUYij5UE",   # Thomas the Tank Engine remix
+        # --- Bonus chaos ---
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=43s",  # Rickroll mais skip l'intro
+        #DEAD "https://www.youtube.com/watch?v=o-YBDTqX_ZU",   # Rickroll 4K 60fps
+        # Not good "https://www.youtube.com/watch?v=2Z4m4lnjxkY",   # Benny Hill Theme (Yakety Sax)
+        # Not good "https://www.youtube.com/watch?v=hB8S6oKjiw8",   # Oh No Oh No Oh No No No
+    ]
+
+    @app.post("/api/attendance")
+    def attendance():
+        """Generate (and optionally print) a personalised student attendance ticket."""
+        body, err = _parse_body()
+        if err is not None:
+            return err
+
+        student_email = body.get("student_email", "").strip()
+        if not student_email:
+            return _err("Missing required field: 'student_email'")
+
+        # --- Derive student name from email if not provided ---------------
+        student_name = body.get("student_name", "").strip()
+        if not student_name:
+            local_part = student_email.split("@")[0]
+            parts = local_part.replace(".", " ").replace("-", " ").split()
+            # Handle numbered names like "prenom1.nom" -> "Prenom Nom"
+            cleaned = []
+            for p in parts:
+                import re
+                cleaned.append(re.sub(r'\d+', '', p).capitalize())
+            student_name = " ".join(cleaned) if cleaned else local_part
+
+        # --- Deterministic seed from email for consistent tickets ---------
+        seed = int(hashlib.md5(student_email.encode()).hexdigest(), 16)
+        rng = random.Random(seed)
+
+        # --- Generate unique ticket number from email hash ----------------
+        ticket_num = str(seed % 999999).zfill(6)
+        commande_num = f"CMD-2025-{ticket_num}"
+
+        # --- Pick random funny items (3-6 items) -------------------------
+        now = datetime.now()
+        nb_items = rng.randint(3, 6)
+        chosen_items = rng.sample(
+            _FUNNY_ITEMS_POOL, min(nb_items, len(_FUNNY_ITEMS_POOL))
+        )
+
+        items = []
+        total_ht = 0.0
+        for designation, price in chosen_items:
+            qty = rng.randint(1, 3)
+            total = round(price * qty, 2)
+            total_ht += total
+            items.append({
+                "quantity": qty,
+                "designation": designation,
+                "unit_price": price,
+                "total_price": total,
+            })
+
+        tva = round(total_ht * 0.20, 2)
+        total_ttc = round(total_ht + tva, 2)
+
+        # --- Pick random funny elements ----------------------------------
+        seller = body.get("scanned_by", "").strip() or rng.choice(_FUNNY_SELLERS)
+        motto = rng.choice(_FUNNY_MOTTOS)
+        warning = rng.choice(_FUNNY_WARNINGS)
+        footer = rng.choice(_FUNNY_FOOTERS)
+        rickroll = rng.choice(_TROLL_URLS)
+
+        # --- Build QR code URL with student identifier --------------------
+        qr_value = f"{rickroll}?student={student_email}&ticket={ticket_num}"
+
+        # --- Assemble the full ticket data --------------------------------
+        ticket_data = {
+            "merchant": {
+                "name": "EPITECH",
+                "address": "2 Rue du Professeur Charles Appleton",
+            },
+            "order": {
+                "commande_number": commande_num,
+                "ticket_number": ticket_num,
+                "caisse_number": str(rng.randint(1, 42)).zfill(2),
+            },
+            "transaction": {
+                "date": now.strftime("%Y-%m-%d"),
+                "hour": now.strftime("%H:%M"),
+                "type": "Sur place",
+            },
+            "staff": {
+                "seller": seller,
+            },
+            "student": {
+                "name": student_name,
+                "email": student_email,
+            },
+            "items": items,
+            "totals": {
+                "total_ht": total_ht,
+                "tva_amount": tva,
+                "total_ttc": total_ttc,
+            },
+            "qr_code": {
+                "value": qr_value,
+            },
+            "fun": {
+                "motto": motto,
+                "warning": warning,
+            },
+            "footer": {
+                "message": footer,
+            },
+        }
+
+        # --- Apply extend overrides (deep merge) -------------------------
+        extend = body.get("extend")
+        if extend is not None:
+            if not isinstance(extend, dict):
+                return _err("'extend' must be a JSON object")
+            ticket_data = _deep_merge(ticket_data, extend)
+            # Re-sync student info from the (possibly overridden) ticket_data
+            student_name = ticket_data.get("student", {}).get("name", student_name)
+            student_email = ticket_data.get("student", {}).get("email", student_email)
+            ticket_num = ticket_data.get("order", {}).get("ticket_number", ticket_num)
+
+        # --- Paper width --------------------------------------------------
+        paper_width, err = _parse_paper_width(body)
+        if err is not None:
+            return err
+
+        # --- Render preview -----------------------------------------------
+        template = TemplateBuilder.create_attendance_template("attendance")
+        config = PrinterConfig(paper_width=paper_width)
+        renderer = TicketRenderer(template, config)
+        preview = renderer.render_to_text(ticket_data, printer_safe=False)
+
+        # --- Optionally print ---------------------------------------------
+        printed = False
+        if body.get("print", False):
+            try:
+                feed_lines = int(body.get("feed_lines", 3))
+            except (TypeError, ValueError):
+                return _err("feed_lines must be an integer")
+
+            no_cut = bool(body.get("no_cut", False))
+            printer = ZJ8360Printer(paper_width=paper_width)
+
+            if not printer.connect():
+                return _err(
+                    "Could not connect to the printer. "
+                    "Make sure it is plugged in and powered on.",
+                    503,
+                )
+
+            try:
+                tp = TicketPrinter(printer, template, config)
+                ok = tp.print_formatted_ticket(
+                    ticket_data,
+                    cut_paper=not no_cut,
+                    feed_lines=feed_lines,
+                )
+                printed = ok
+                if not ok:
+                    return _err("Failed to print the attendance ticket", 500)
+            finally:
+                printer.disconnect()
+
+        return _ok({
+            "student": {
+                "name": student_name,
+                "email": student_email,
+            },
+            "ticket_number": ticket_num,
+            "template": "attendance",
+            "paper_width": paper_width,
+            "printed": printed,
+            "preview": preview,
+            "ticket_data": ticket_data,
+        })
+
+    # =========================================================================
     # POST /api/qr
     # =========================================================================
     #
@@ -663,7 +1085,7 @@ def create_app() -> "Flask":  # noqa: F821  (Flask typed as string to allow lazy
         return _err(
             "Endpoint not found. Available routes: "
             "GET /api/health, GET /api/templates, "
-            "POST /api/preview, POST /api/print, POST /api/qr, "
+            "POST /api/preview, POST /api/print, POST /api/attendance, POST /api/qr, "
             "GET /api/usb, GET /api/test",
             404,
         )
@@ -707,6 +1129,7 @@ def start_server(port: int = 8360, debug: bool = False) -> None:
     print(f"    GET  http://localhost:{port}/api/templates")
     print(f"    POST http://localhost:{port}/api/preview")
     print(f"    POST http://localhost:{port}/api/print")
+    print(f"    POST http://localhost:{port}/api/attendance")
     print(f"    POST http://localhost:{port}/api/qr")
     print(f"    GET  http://localhost:{port}/api/usb")
     print(f"    GET  http://localhost:{port}/api/test")
