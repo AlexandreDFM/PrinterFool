@@ -1,0 +1,72 @@
+[
+  {
+    "merchant": {
+      "name": "EPITECH",
+      "address": "2 Rue du Professeur Charles Appleton"
+    },
+    "order": {
+      "commande_number": "CMD-2025-042069",
+      "ticket_number": "042069",
+      "caisse_number": "07"
+    },
+    "transaction": {
+      "date": "2025-04-01",
+      "hour": "09:42",
+      "type": "Sur place"
+    },
+    "staff": {
+      "seller": "Gordon Ramsay (enervE)"
+    },
+    "student": {
+      "name": "Charles Affouard",
+      "email": "charles1.affouard@epitech.eu"
+    },
+    "items": [
+      {
+        "quantity": 1,
+        "designation": "Air frais d'Epitech (edition limitee)",
+        "unit_price": 42.0,
+        "total_price": 42.0
+      },
+      {
+        "quantity": 2,
+        "designation": "Cafe qui marche vraiment",
+        "unit_price": 999.99,
+        "total_price": 1999.98
+      },
+      {
+        "quantity": 1,
+        "designation": "Compilation sans erreur",
+        "unit_price": 404.0,
+        "total_price": 404.0
+      },
+      {
+        "quantity": 3,
+        "designation": "Motivation (en rupture)",
+        "unit_price": 0.01,
+        "total_price": 0.03
+      },
+      {
+        "quantity": 1,
+        "designation": "Licence StackOverflow Premium",
+        "unit_price": 199.99,
+        "total_price": 199.99
+      }
+    ],
+    "totals": {
+      "total_ht": 2646.0,
+      "tva_amount": 529.2,
+      "total_ttc": 3175.2
+    },
+    "qr_code": {
+      "value": "https://www.youtube.com/watch?v=dQw4w9WgXcQ?student=charles1.affouard@epitech.eu&ticket=042069"
+    },
+    "fun": {
+      "motto": "malloc(happiness) returned NULL",
+      "warning": "Ce ticket doit etre presente EN PERSONNE a 17h"
+    },
+    "footer": {
+      "message": "Merci d'avoir scan ta carte, champion !"
+    }
+  }
+]

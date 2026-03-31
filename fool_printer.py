@@ -56,6 +56,7 @@ __version__ = "1.0.0"
 TEMPLATE_TYPES: Dict[str, callable] = {
     "event": TemplateBuilder.create_event_template,
     "receipt": TemplateBuilder.create_receipt_template,
+    "attendance": TemplateBuilder.create_attendance_template,
     "poisson": TemplateBuilder.create_poisson_template,
 }
 
@@ -117,9 +118,10 @@ def _normalize_tickets(data: Union[dict, list]) -> List[dict]:
 
 # Keys that unambiguously identify a template type
 _TEMPLATE_SIGNATURES = {
-    "receipt": {"merchant", "order", "items", "totals"},
-    "event":   {"event", "seat", "holder"},
-    "poisson": {"poisson"},
+    "attendance": {"student"},
+    "receipt":    {"merchant", "order", "items", "totals"},
+    "event":      {"event", "seat", "holder"},
+    "poisson":    {"poisson"},
 }
 
 

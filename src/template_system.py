@@ -544,6 +544,127 @@ class TemplateBuilder:
 
         return "\n".join(lines)
 
+    @staticmethod
+    def create_attendance_template(name: str = "Attendance") -> "TicketTemplate":
+        """Create a student attendance receipt template (April Fools edition).
+
+        This template renders a fake restaurant receipt that serves as a
+        student attendance proof.  Each ticket is personalised with the
+        student's name/email and contains randomised funny items.
+
+        Expected JSON structure::
+
+            {
+              "merchant": { "name": "EPITECH", "address": "..." },
+              "order":    { "commande_number": "...", "ticket_number": "...", "caisse_number": "..." },
+              "transaction": { "date": "...", "hour": "...", "type": "Sur place" },
+              "staff":    { "seller": "..." },
+              "student":  { "name": "...", "email": "..." },
+              "items":    [ { "quantity": 1, "designation": "...", "unit_price": 0, "total_price": 0 } ],
+              "totals":   { "total_ht": 0, "tva_amount": 0, "total_ttc": 0 },
+              "qr_code":  { "value": "..." },
+              "footer":   { "message": "..." },
+              "fun":      { "motto": "...", "warning": "..." }
+            }
+        """
+        template = TicketTemplate(name=name)
+        template.title = "EPITECH CANTINE"
+
+        # Header with merchant info
+        template.header_fields = [
+            FieldReference(paths=["merchant.name"]),
+            FieldReference(paths=["merchant.address"]),
+        ]
+
+        # Row 1: Order and Ticket info
+        row1 = template.add_card_row(layout=ItemLayout.TWO_ITEMS)
+        row1.add_item(
+            field_ref=FieldReference(paths=["order.commande_number"]), label="Commande"
+        )
+        row1.add_item(
+            field_ref=FieldReference(paths=["order.ticket_number"]), label="Ticket"
+        )
+
+        # Row 2: Date, Time, Type
+        row2 = template.add_card_row(layout=ItemLayout.THREE_ITEMS)
+        row2.add_item(
+            field_ref=FieldReference(paths=["transaction.date"]), label="Date"
+        )
+        row2.add_item(
+            field_ref=FieldReference(paths=["transaction.hour"]), label="Heure"
+        )
+        row2.add_item(
+            field_ref=FieldReference(paths=["transaction.type"]), label="Type"
+        )
+
+        # Row 3: Cash register and Seller
+        row3 = template.add_card_row(layout=ItemLayout.TWO_ITEMS)
+        row3.add_item(
+            field_ref=FieldReference(paths=["order.caisse_number"]), label="Caisse"
+        )
+        row3.add_item(field_ref=FieldReference(paths=["staff.seller"]), label="Vendeur")
+
+        # Row 4: Student info
+        row4 = template.add_card_row(layout=ItemLayout.ONE_ITEM)
+        row4.add_item(
+            field_ref=FieldReference(paths=["student.name"]), label="Etudiant"
+        )
+
+        # Items details
+        template.add_detail_item(
+            predefined=lambda data: TemplateBuilder._format_receipt_items(data)
+        )
+
+        # Totals section
+        template.add_detail_item(
+            predefined=lambda data: TemplateBuilder._format_receipt_totals(data)
+        )
+
+        # Fun motto / warning
+        template.add_detail_item(
+            predefined=lambda data: TemplateBuilder._format_attendance_fun(data)
+        )
+
+        # Barcode (QR Code)
+        template.set_barcode_section(
+            barcode_value=FieldReference(paths=["qr_code.value"]),
+            barcode_label="SCAN POUR VALIDER",
+        )
+
+        # Footer
+        template.add_detail_item(
+            field_selector=FieldSelector(
+                fields=[
+                    FieldReference(paths=["footer.message"]),
+                ]
+            )
+        )
+
+        # List template
+        template.list_title_field = FieldReference(paths=["student.name"])
+        template.list_subtitle_field = FieldReference(paths=["transaction.date"])
+
+        return template
+
+    @staticmethod
+    def _format_attendance_fun(data: Dict[str, Any]) -> Optional[str]:
+        """Format the fun section of the attendance ticket."""
+        fun = data.get("fun", {})
+        motto = fun.get("motto", "")
+        warning = fun.get("warning", "")
+
+        if not motto and not warning:
+            return None
+
+        lines = [""]
+        if motto:
+            lines.append(f">> {motto} <<")
+        if warning:
+            lines.append("")
+            lines.append(f"/!\\ {warning} /!\\")
+        lines.append("")
+        return "\n".join(lines)
+
     # ------------------------------------------------------------------
     # Poisson d'Avril ASCII art collection
     # Sourced & adapted from https://www.asciiart.eu/animals/fish
