@@ -1,1 +1,7 @@
-pyusb==1.2.1
+pyusb>=1.2.1
+qrcode>=8.1
+pillow>=11.0
+black>=24.1.1
+flask>=3.0
+flask-cors>=4.0
+python-dotenv>=1.0
