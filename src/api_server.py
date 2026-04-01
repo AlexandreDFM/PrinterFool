@@ -586,19 +586,21 @@ def create_app() -> "Flask":  # noqa: F821  (Flask typed as string to allow lazy
     _FUNNY_SELLERS = [
         "Jean-Michel Bricoleur",
         "Mme Krabappel",
-        "Gordon Ramsay (enervE)",
+        "Gordon Ramsay",
         "Le Stagiaire du Mardi",
         "ChatGPT (en greve)",
         "Un pigeon savant",
         "Mister Robot",
         "Gandalf le Gris",
-        "L'etudiant de 5e annee",
+        "Julien Calenge",
+        "Marvin",
+        "Gildas Vinson",
         "Le fantome du Hub",
-        "Master Yoda (cuisine fusion)",
+        "Master Yoda",
         "Un Bocal en furie",
         "La souris du serveur",
-        "Luigi (plombier/cuisinier)",
-        "Patrick l'etoile de mer",
+        "Luigi",
+        "Patrick l'Etoile de mer",
     ]
 
     _FUNNY_ITEMS_POOL = [
@@ -645,13 +647,13 @@ def create_app() -> "Flask":  # noqa: F821  (Flask typed as string to allow lazy
         "while(alive) { code(); }",
         "404 : Motivation Not Found",
         "Ton futur employeur regarde ce ticket",
-        "Ce ticket s'autodEtruira dans 5... 4...",
+        "Ce ticket s'autodetruira dans 5... 4...",
         "Tu viens de mass print un ticket de caisse",
         "C'est pas un bug, c'est une feature",
     ]
 
     _FUNNY_WARNINGS = [
-        "Ce ticket doit etre presente EN PERSONNE a 17h30",
+        "Ce ticket est a presenter EN PERSONNE a 17h30",
         "Ticket non echangeable, non remboursable, non negociable",
         "Conservation: garder loin du cafe et des larmes",
         "Toute ressemblance avec un vrai ticket est fortuite",
