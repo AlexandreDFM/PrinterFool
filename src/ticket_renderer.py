@@ -242,6 +242,11 @@ class TicketRenderer:
         if not self.config.wrap_text or len(text) <= self.config.paper_width:
             return text
 
+        # Auto-detect leading whitespace so wrapped continuation lines
+        # keep the same indentation as the original text.
+        if indent == 0:
+            indent = len(text) - len(text.lstrip(" "))
+
         words = text.split()
         result_lines: List[str] = []
         current = " " * indent
