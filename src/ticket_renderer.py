@@ -141,7 +141,7 @@ class TicketRenderer:
             lines.append(self.config.line_separator * w)
             for item in rendered["card"]:
                 if item:
-                    lines.append(self._wrap(item))
+                    lines.append(item)
                     lines.append("")
             lines.append(self.config.line_separator * w)
 
