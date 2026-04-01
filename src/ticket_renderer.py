@@ -112,6 +112,7 @@ class TicketRenderer:
         "without QR" variant used before sending a native QR command.
         """
         lines: List[str] = []
+        data = {**data, "_paper_width": self.config.paper_width}
         rendered = self.template.render_full(data)
         w = self.config.paper_width
 

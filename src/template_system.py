@@ -538,11 +538,12 @@ class TemplateBuilder:
         tva = totals.get("tva_amount", 0)
         ttc = totals.get("total_ttc", 0)
 
-        lines.append("-" * 40)
+        sep = "-" * data.get("_paper_width", 40)
+        lines.append(sep)
         lines.append(f"Total HT  : {ht:.2f}€")
         lines.append(f"TVA       : {tva:.2f}€")
         lines.append(f"Total TTC : {ttc:.2f}€")
-        lines.append("-" * 40)
+        lines.append(sep)
 
         return "\n".join(lines)
 
