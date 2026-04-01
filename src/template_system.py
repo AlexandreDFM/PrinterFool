@@ -120,7 +120,7 @@ class TemplateRow:
 
     layout: ItemLayout = ItemLayout.ONE_ITEM
     items: List[TemplateItem] = field(default_factory=list)
-    separator: str = " / "
+    separator: str = " | "
 
     def add_item(
         self,
@@ -489,7 +489,7 @@ class TemplateBuilder:
         # Barcode
         template.set_barcode_section(
             barcode_value=FieldReference(paths=["qr_code.value"]),
-            barcode_label="QR Code",
+            barcode_label=None,
         )
 
         # Footer
@@ -661,7 +661,7 @@ class TemplateBuilder:
             lines.append(f">> {motto} <<")
         if warning:
             lines.append("")
-            lines.append(f"/!\\ {warning} /!\\")
+            lines.append(f"/!\\{warning}/!\\")
         lines.append("")
         return "\n".join(lines)
 
