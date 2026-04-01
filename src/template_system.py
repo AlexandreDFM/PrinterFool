@@ -571,7 +571,7 @@ class TemplateBuilder:
             }
         """
         template = TicketTemplate(name=name)
-        template.title = "EPITECH CANTINE"
+        template.title = "TICKET DE PRESENCE"
 
         # Header with merchant info
         template.header_fields = [
@@ -635,13 +635,9 @@ class TemplateBuilder:
             barcode_label="SCAN POUR VALIDER",
         )
 
-        # Footer
+        # Footer (centered)
         template.add_detail_item(
-            field_selector=FieldSelector(
-                fields=[
-                    FieldReference(paths=["footer.message"]),
-                ]
-            )
+            predefined=lambda data: TemplateBuilder._format_attendance_footer(data)
         )
 
         # List template
@@ -652,22 +648,38 @@ class TemplateBuilder:
 
     @staticmethod
     def _format_attendance_fun(data: Dict[str, Any]) -> Optional[str]:
-        """Format the fun section of the attendance ticket."""
+        """Format the fun section of the attendance ticket (centered)."""
         fun = data.get("fun", {})
         motto = fun.get("motto", "")
         warning = fun.get("warning", "")
+        w = data.get("_paper_width", 40)
 
         if not motto and not warning:
             return None
 
+        def c(text: str) -> str:
+            """Center text within paper width, return as-is if too long."""
+            return text.center(w) if len(text) <= w else text
+
         lines = [""]
         if motto:
-            lines.append(f">> {motto} <<")
+            lines.append(c(f">> {motto} <<"))
         if warning:
             lines.append("")
-            lines.append(f"/!\\{warning}/!\\")
+            lines.append(c("/!\\ /!\\ /!\\"))
+            lines.append(c(warning) if len(warning) <= w else warning)
+            lines.append(c("/!\\ /!\\ /!\\"))
         lines.append("")
         return "\n".join(lines)
+
+    @staticmethod
+    def _format_attendance_footer(data: Dict[str, Any]) -> Optional[str]:
+        """Format the footer message of the attendance ticket (centered)."""
+        message = data.get("footer", {}).get("message", "")
+        if not message:
+            return None
+        w = data.get("_paper_width", 40)
+        return message.center(w) if len(message) <= w else message
 
     # ------------------------------------------------------------------
     # Poisson d'Avril ASCII art collection
