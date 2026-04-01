@@ -144,8 +144,10 @@ class TicketRenderer:
                     lines.append("")
             lines.append(self.config.line_separator * w)
 
-        # -- Barcode / QR section --
-        if include_qr and rendered.get("barcode"):
+        barcode_after = getattr(self.template, "barcode_after_details", False)
+
+        # -- Barcode / QR section (before details) --
+        if include_qr and not barcode_after and rendered.get("barcode"):
             self._append_barcode_section(lines, rendered["barcode"], printer_safe)
 
         # -- Details --
@@ -155,6 +157,10 @@ class TicketRenderer:
                 if item:
                     for line in item.split("\n"):
                         lines.append(self._wrap(line))
+
+        # -- Barcode / QR section (after details) --
+        if include_qr and barcode_after and rendered.get("barcode"):
+            self._append_barcode_section(lines, rendered["barcode"], printer_safe)
 
         # -- Footer spacing --
         lines.append("")

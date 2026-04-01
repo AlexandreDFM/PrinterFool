@@ -249,6 +249,7 @@ class TicketTemplate:
 
         # Barcode section
         self.barcode_section: Optional[BarcodeSection] = None
+        self.barcode_after_details: bool = False  # If True, render QR after details
 
         # Details section
         self.details_items: List[DetailItem] = []
@@ -486,7 +487,8 @@ class TemplateBuilder:
             predefined=lambda data: TemplateBuilder._format_receipt_totals(data)
         )
 
-        # Barcode
+        # Barcode — after totals and footer, at the bottom of the receipt
+        template.barcode_after_details = True
         template.set_barcode_section(
             barcode_value=FieldReference(paths=["qr_code.value"]),
             barcode_label=None,
@@ -625,7 +627,8 @@ class TemplateBuilder:
             predefined=lambda data: TemplateBuilder._format_attendance_fun(data)
         )
 
-        # Barcode (QR Code)
+        # Barcode — at the very bottom, after items/totals/fun/footer
+        template.barcode_after_details = True
         template.set_barcode_section(
             barcode_value=FieldReference(paths=["qr_code.value"]),
             barcode_label="SCAN POUR VALIDER",
