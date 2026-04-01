@@ -246,6 +246,7 @@ class TicketTemplate:
 
         # Card template sections
         self.card_rows: List[TemplateRow] = []
+        self.card_row_spacing: bool = True  # If False, no blank line between card rows
 
         # Barcode section
         self.barcode_section: Optional[BarcodeSection] = None
@@ -579,6 +580,9 @@ class TemplateBuilder:
             FieldReference(paths=["merchant.address"]),
         ]
 
+        # No blank line between rows — compact receipt layout
+        template.card_row_spacing = False
+
         # Row 1: Order and Ticket info
         row1 = template.add_card_row(layout=ItemLayout.TWO_ITEMS)
         row1.add_item(
@@ -588,28 +592,31 @@ class TemplateBuilder:
             field_ref=FieldReference(paths=["order.ticket_number"]), label="Ticket"
         )
 
-        # Row 2: Date, Time, Type
-        row2 = template.add_card_row(layout=ItemLayout.THREE_ITEMS)
-        row2.add_item(
-            field_ref=FieldReference(paths=["transaction.date"]), label="Date"
-        )
-        row2.add_item(
-            field_ref=FieldReference(paths=["transaction.hour"]), label="Heure"
-        )
+        # Row 2: Type alone (prominent, on its own line)
+        row2 = template.add_card_row(layout=ItemLayout.ONE_ITEM)
         row2.add_item(
             field_ref=FieldReference(paths=["transaction.type"]), label="Type"
         )
 
-        # Row 3: Cash register and Seller
+        # Row 3: Date and Hour (without Type, fits cleanly on one line)
         row3 = template.add_card_row(layout=ItemLayout.TWO_ITEMS)
         row3.add_item(
+            field_ref=FieldReference(paths=["transaction.date"]), label="Date"
+        )
+        row3.add_item(
+            field_ref=FieldReference(paths=["transaction.hour"]), label="Heure"
+        )
+
+        # Row 4: Cash register and Seller
+        row4 = template.add_card_row(layout=ItemLayout.TWO_ITEMS)
+        row4.add_item(
             field_ref=FieldReference(paths=["order.caisse_number"]), label="Caisse"
         )
-        row3.add_item(field_ref=FieldReference(paths=["staff.seller"]), label="Vendeur")
+        row4.add_item(field_ref=FieldReference(paths=["staff.seller"]), label="Vendeur")
 
-        # Row 4: Student info
-        row4 = template.add_card_row(layout=ItemLayout.ONE_ITEM)
-        row4.add_item(
+        # Row 5: Student info
+        row5 = template.add_card_row(layout=ItemLayout.ONE_ITEM)
+        row5.add_item(
             field_ref=FieldReference(paths=["student.name"]), label="Etudiant"
         )
 

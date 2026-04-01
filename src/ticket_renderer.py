@@ -139,10 +139,12 @@ class TicketRenderer:
         if rendered.get("card"):
             lines.append("")
             lines.append(self.config.line_separator * w)
+            row_spacing = getattr(self.template, "card_row_spacing", True)
             for item in rendered["card"]:
                 if item:
                     lines.append(item)
-                    lines.append("")
+                    if row_spacing:
+                        lines.append("")
             lines.append(self.config.line_separator * w)
 
         barcode_after = getattr(self.template, "barcode_after_details", False)
