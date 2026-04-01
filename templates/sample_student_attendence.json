@@ -15,7 +15,7 @@
       "type": "Sur place"
     },
     "staff": {
-      "seller": "Gordon Ramsay (enervE)"
+      "seller": "Gordon Ramsay"
     },
     "student": {
       "name": "Charles Affouard",
@@ -63,7 +63,7 @@
     },
     "fun": {
       "motto": "malloc(happiness) returned NULL",
-      "warning": "Ce ticket doit etre presente EN PERSONNE a 17h"
+      "warning": "Ce ticket est a presenter EN PERSONNE a 17h30"
     },
     "footer": {
       "message": "Merci d'avoir scan ta carte, champion !"
