@@ -340,7 +340,7 @@ class TicketPrinter:
 
     def _send_native_qr(self, data: Dict[str, Any], barcode_data: str) -> None:
         """Send the native ESC Z QR command to the printer."""
-        label = data.get("qr_code", {}).get("label", "QR Code")
+        label = data.get("qr_code", {}).get("label", "")
         if label:
             self.printer.set_alignment("center")
             self.printer.print_text("")
